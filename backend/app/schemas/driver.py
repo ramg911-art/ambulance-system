@@ -1,16 +1,16 @@
 """Driver schemas."""
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DriverCreate(BaseModel):
     """Create driver."""
 
     organization_id: int
-    name: str
-    phone: str
-    password: str
+    name: str = Field(..., min_length=1, strip_whitespace=True)
+    phone: str = Field(..., min_length=1, strip_whitespace=True)
+    password: str = Field(..., min_length=1)
     license_number: Optional[str] = None
     active: bool = True
 

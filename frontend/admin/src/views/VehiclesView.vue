@@ -15,11 +15,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="v in vehicles" :key="v.id">
-            <td>{{ v.id }}</td>
-            <td>{{ v.registration_number }}</td>
+          <tr v-for="v in vehicles" :key="v.id || v">
+            <td>{{ v.id ?? '-' }}</td>
+            <td>{{ v.registration_number || '-' }}</td>
             <td>{{ v.make_model || '-' }}</td>
-            <td>{{ v.organization_id }}</td>
+            <td>{{ v.organization_id ?? '-' }}</td>
             <td>{{ v.active ? 'Yes' : 'No' }}</td>
             <td>
               <button class="btn-sm" @click="openEdit(v)">Edit</button>
@@ -65,8 +65,13 @@ const form = ref({
 })
 
 async function load() {
-  const { data } = await api.get('/vehicles', { params: { active_only: false } })
-  vehicles.value = data
+  try {
+    const res = await api.get('/vehicles', { params: { active_only: false } })
+    vehicles.value = Array.isArray(res.data) ? res.data : (res.data?.data || res.data?.items || [])
+  } catch (e) {
+    console.error('Failed to load vehicles:', e)
+    vehicles.value = []
+  }
 }
 
 function openCreate() {
@@ -82,20 +87,35 @@ function openEdit(v) {
 }
 
 async function save() {
+  const reg = (form.value.registration_number || '').trim()
+  if (!reg) {
+    alert('Registration number is required')
+    return
+  }
   try {
     if (editingId.value) {
       await api.patch(`/vehicles/${editingId.value}`, {
-        registration_number: form.value.registration_number,
-        make_model: form.value.make_model,
+        registration_number: reg,
+        make_model: (form.value.make_model || '').trim() || null,
         active: form.value.active,
       })
     } else {
-      await api.post('/vehicles', form.value)
+      await api.post('/vehicles', {
+        organization_id: form.value.organization_id,
+        registration_number: reg,
+        make_model: (form.value.make_model || '').trim() || null,
+        active: form.value.active,
+      })
     }
     showModal.value = false
-    load()
+    await load()
   } catch (e) {
-    alert(e.response?.data?.detail || 'Failed to save')
+    const err = e.response?.data
+    let msg = 'Failed to save vehicle'
+    if (err?.detail) {
+      msg = typeof err.detail === 'string' ? err.detail : err.detail.map(d => d.msg || d).join(', ')
+    }
+    alert(msg)
   }
 }
 

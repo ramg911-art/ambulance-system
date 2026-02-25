@@ -47,10 +47,19 @@ def get_live_vehicle_locations(db: DbSession) -> list[VehicleLocationResponse]:
 @router.post("", response_model=VehicleResponse)
 def create_vehicle(data: VehicleCreate, db: DbSession) -> Vehicle:
     """Create a vehicle."""
+    reg = (data.registration_number or "").strip()
+    if not reg:
+        raise HTTPException(status_code=400, detail="Registration number is required")
+    existing = db.query(Vehicle).filter(
+        Vehicle.organization_id == data.organization_id,
+        Vehicle.registration_number == reg,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Vehicle with this registration already exists")
     v = Vehicle(
         organization_id=data.organization_id,
-        registration_number=data.registration_number,
-        make_model=data.make_model,
+        registration_number=reg,
+        make_model=(data.make_model or "").strip() or None,
         active=data.active,
     )
     db.add(v)

@@ -15,11 +15,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="d in drivers" :key="d.id">
-            <td>{{ d.id }}</td>
-            <td>{{ d.name }}</td>
-            <td>{{ d.phone }}</td>
-            <td>{{ d.organization_id }}</td>
+          <tr v-for="d in drivers" :key="d.id || d">
+            <td>{{ d.id ?? '-' }}</td>
+            <td>{{ d.name || '-' }}</td>
+            <td>{{ d.phone || '-' }}</td>
+            <td>{{ d.organization_id ?? '-' }}</td>
             <td>{{ d.active ? 'Yes' : 'No' }}</td>
             <td>
               <button class="btn-sm" @click="openEdit(d)">Edit</button>
@@ -71,8 +71,13 @@ const form = ref({
 })
 
 async function load() {
-  const { data } = await api.get('/drivers', { params: { active_only: false } })
-  drivers.value = data
+  try {
+    const res = await api.get('/drivers', { params: { active_only: false } })
+    drivers.value = Array.isArray(res.data) ? res.data : (res.data?.data || res.data?.items || [])
+  } catch (e) {
+    console.error('Failed to load drivers:', e)
+    drivers.value = []
+  }
 }
 
 function openCreate() {
@@ -88,18 +93,40 @@ function openEdit(d) {
 }
 
 async function save() {
+  const name = (form.value.name || '').trim()
+  const phone = (form.value.phone || '').trim()
+  if (!name || !phone) {
+    alert('Name and phone are required')
+    return
+  }
+  if (!editingId.value && !(form.value.password || '').trim()) {
+    alert('Password is required for new drivers')
+    return
+  }
   try {
     if (editingId.value) {
-      const payload = { name: form.value.name, license_number: form.value.license_number, active: form.value.active }
-      if (form.value.password) payload.password = form.value.password
+      const payload = { name, license_number: (form.value.license_number || '').trim() || null, active: form.value.active }
+      if (form.value.password?.trim()) payload.password = form.value.password.trim()
       await api.patch(`/drivers/${editingId.value}`, payload)
     } else {
-      await api.post('/drivers', form.value)
+      await api.post('/drivers', {
+        organization_id: form.value.organization_id,
+        name,
+        phone,
+        password: form.value.password.trim(),
+        license_number: (form.value.license_number || '').trim() || null,
+        active: form.value.active,
+      })
     }
     showModal.value = false
-    load()
+    await load()
   } catch (e) {
-    alert(e.response?.data?.detail || 'Failed to save')
+    const err = e.response?.data
+    let msg = 'Failed to save driver'
+    if (err?.detail) {
+      msg = typeof err.detail === 'string' ? err.detail : (Array.isArray(err.detail) ? err.detail.map(d => d.msg || d).join(', ') : String(err.detail))
+    }
+    alert(msg)
   }
 }
 

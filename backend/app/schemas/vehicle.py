@@ -1,14 +1,14 @@
 """Vehicle schemas."""
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class VehicleCreate(BaseModel):
     """Create vehicle."""
 
     organization_id: int
-    registration_number: str
+    registration_number: str = Field(..., min_length=1, strip_whitespace=True)
     make_model: Optional[str] = None
     active: bool = True
 
