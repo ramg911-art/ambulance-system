@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_admin
 from app.schemas.gps import GPSUpdateRequest, VehicleLocationResponse
 from app.services.gps_service import GPSService
 
@@ -30,7 +30,7 @@ def update_gps(data: GPSUpdateRequest, db: DbSession) -> dict:
 
 
 @router.get("/vehicles/live")
-def get_live_vehicles(db: DbSession) -> list[VehicleLocationResponse]:
+def get_live_vehicles(db: DbSession, _admin=Depends(get_current_admin)) -> list[VehicleLocationResponse]:
     """Get live vehicle locations from Redis."""
     svc = GPSService(db)
     locations = svc.get_live_vehicle_locations()

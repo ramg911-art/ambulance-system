@@ -6,6 +6,14 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('admin_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 // Log API base URL on first use (helps debug production save failures)
 if (typeof window !== 'undefined') {
   console.info('[API] baseURL:', baseURL, '(set VITE_API_URL when building for production if API is on different host)')
@@ -14,6 +22,10 @@ if (typeof window !== 'undefined') {
 api.interceptors.response.use(
   (r) => r,
   (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('admin_token')
+      window.location.href = '/login'
+    }
     const url = err.config?.baseURL && err.config?.url ? `${err.config.baseURL.replace(/\/$/, '')}${err.config.url}` : 'unknown'
     if (!err.response) {
       console.error('[API] No response - request may be blocked (CORS/proxy). URL:', url, err.message)

@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.core.security import hash_password
 from app.db.session import SessionLocal, init_db
 from app.models import (
+    AdminUser,
     Organization,
     Driver,
     Vehicle,
@@ -20,8 +21,19 @@ def seed():
     init_db()
     db = SessionLocal()
     try:
+        # Always ensure admin user exists
+        if not db.query(AdminUser).first():
+            admin = AdminUser(
+                username="admin",
+                password_hash=hash_password("admin123"),
+                active=True,
+            )
+            db.add(admin)
+            db.commit()
+            print("Admin user created. Login: admin / admin123")
+
         if db.query(Organization).first():
-            print("Data already exists, skipping seed.")
+            print("Org data already exists, skipping org/driver/vehicle seed.")
             return
 
         org = Organization(name="City Ambulance Service", code="CAS", active=True)
@@ -75,7 +87,7 @@ def seed():
         db.add(tariff)
 
         db.commit()
-        print("Seed completed. Login: +1234567890 / driver123")
+        print("Seed completed. Driver: +1234567890 / driver123 | Admin: admin / admin123")
     finally:
         db.close()
 

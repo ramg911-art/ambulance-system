@@ -1,15 +1,15 @@
 <template>
   <div class="login">
     <div class="login-card">
-      <h1>Ambulance Driver</h1>
+      <h1>Ambulance Admin</h1>
       <p class="subtitle">Sign in to continue</p>
       <form @submit.prevent="handleLogin" class="form">
         <input
-          v-model="phone"
-          type="tel"
-          placeholder="Phone number"
+          v-model="username"
+          type="text"
+          placeholder="Username"
           autocapitalize="off"
-          autocomplete="tel"
+          autocomplete="username"
           required
         />
         <input
@@ -22,7 +22,7 @@
         <p v-if="error" class="error">{{ error }}</p>
         <button type="submit" :disabled="loading">Sign In</button>
       </form>
-      <p class="hint">Default: +1234567890 / driver123 (run seed_data.py first)</p>
+      <p class="hint">Default: admin / admin123 (run seed_data.py first)</p>
     </div>
   </div>
 </template>
@@ -30,12 +30,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import api from '../services/api'
 
 const router = useRouter()
-const auth = useAuthStore()
 
-const phone = ref('')
+const username = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -44,10 +43,11 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
   try {
-    await auth.login(phone.value, password.value)
+    const { data } = await api.post('/auth/admin-login', { username: username.value, password: password.value })
+    localStorage.setItem('admin_token', data.access_token)
     router.push('/')
   } catch (e) {
-    error.value = e.response?.data?.detail || (e.response ? `Error ${e.response.status}` : 'Network error - check API URL and backend')
+    error.value = e.response?.data?.detail || 'Login failed'
   } finally {
     loading.value = false
   }
@@ -61,7 +61,7 @@ async function handleLogin() {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 }
 .login-card {
   background: white;
@@ -91,13 +91,13 @@ h1 {
 }
 .form input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  border-color: #1e293b;
+  box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.2);
 }
 .form button {
   width: 100%;
   padding: 0.875rem;
-  background: #2563eb;
+  background: #1e293b;
   color: white;
   border: none;
   border-radius: 0.5rem;

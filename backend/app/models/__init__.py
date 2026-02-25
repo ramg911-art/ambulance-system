@@ -1,4 +1,5 @@
 """Database models."""
+from app.models.admin_user import AdminUser
 from app.models.organization import Organization
 from app.models.driver import Driver
 from app.models.vehicle import Vehicle
@@ -11,6 +12,7 @@ from app.models.gps_log import GPSLog
 from app.models.invoice import Invoice
 
 __all__ = [
+    "AdminUser",
     "Organization",
     "Driver",
     "Vehicle",

@@ -2,16 +2,16 @@
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_admin
 from app.models import Organization, Vehicle
 from app.schemas.gps import VehicleLocationResponse
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse
 from app.services.gps_service import GPSService
 
-router = APIRouter(prefix="/vehicles", tags=["vehicles"])
+router = APIRouter(prefix="/vehicles", tags=["vehicles"], dependencies=[Depends(get_current_admin)])
 
 
 @router.get("", response_model=list[VehicleResponse])

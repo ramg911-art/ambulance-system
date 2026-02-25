@@ -1,15 +1,15 @@
 """Billing routes - invoices for trips."""
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_admin
 from app.models import Invoice, Trip
 from app.schemas.billing import InvoiceResponse
 from app.services.billing_service import calculate_trip_cost, create_invoice
 
-router = APIRouter(prefix="/billing", tags=["billing"])
+router = APIRouter(prefix="/billing", tags=["billing"], dependencies=[Depends(get_current_admin)])
 
 
 @router.get("/invoices", response_model=list[InvoiceResponse])

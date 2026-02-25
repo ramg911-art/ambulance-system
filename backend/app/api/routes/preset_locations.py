@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_admin
 from app.models import PresetLocation
 from app.schemas.preset_location import (
     PresetLocationCreate,
@@ -19,6 +19,7 @@ router = APIRouter(prefix="/preset-locations", tags=["preset-locations"])
 @router.get("", response_model=list[PresetLocationResponse])
 def list_preset_locations(
     db: DbSession,
+    _admin=Depends(get_current_admin),
     organization_id: Optional[int] = Query(None),
 ) -> list[PresetLocation]:
     """List preset locations, optionally filtered by organization."""
@@ -29,7 +30,7 @@ def list_preset_locations(
 
 
 @router.post("", response_model=PresetLocationResponse)
-def create_preset_location(data: PresetLocationCreate, db: DbSession) -> PresetLocation:
+def create_preset_location(data: PresetLocationCreate, db: DbSession, _admin=Depends(get_current_admin)) -> PresetLocation:
     """Create a preset location."""
     loc = PresetLocation(
         organization_id=data.organization_id,
@@ -60,7 +61,7 @@ def get_nearby_preset_location(
 
 
 @router.get("/{loc_id}", response_model=PresetLocationResponse)
-def get_preset_location(loc_id: int, db: DbSession) -> PresetLocation:
+def get_preset_location(loc_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> PresetLocation:
     """Get preset location by ID."""
     loc = db.query(PresetLocation).filter(PresetLocation.id == loc_id).first()
     if not loc:
@@ -70,7 +71,7 @@ def get_preset_location(loc_id: int, db: DbSession) -> PresetLocation:
 
 @router.patch("/{loc_id}", response_model=PresetLocationResponse)
 def update_preset_location(
-    loc_id: int, data: PresetLocationUpdate, db: DbSession
+    loc_id: int, data: PresetLocationUpdate, db: DbSession, _admin=Depends(get_current_admin)
 ) -> PresetLocation:
     """Update a preset location."""
     loc = db.query(PresetLocation).filter(PresetLocation.id == loc_id).first()
@@ -92,7 +93,7 @@ def update_preset_location(
 
 
 @router.delete("/{loc_id}")
-def delete_preset_location(loc_id: int, db: DbSession) -> dict:
+def delete_preset_location(loc_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> dict:
     """Delete a preset location."""
     loc = db.query(PresetLocation).filter(PresetLocation.id == loc_id).first()
     if not loc:

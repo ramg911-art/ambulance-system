@@ -1,10 +1,10 @@
 """Trip routes."""
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_admin
 from app.models import Trip
 from app.schemas.trip import TripCreate, TripResponse
 from app.services.trip_service import create_trip, start_trip, end_trip
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/trips", tags=["trips"])
 @router.get("", response_model=list[TripResponse])
 def list_trips(
     db: DbSession,
+    _admin=Depends(get_current_admin),
     organization_id: Optional[int] = Query(None),
     driver_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
@@ -38,7 +39,7 @@ def post_trip(data: TripCreate, db: DbSession) -> Trip:
 
 
 @router.get("/{trip_id}", response_model=TripResponse)
-def get_trip(trip_id: int, db: DbSession) -> Trip:
+def get_trip(trip_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> Trip:
     """Get trip by ID."""
     trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not trip:

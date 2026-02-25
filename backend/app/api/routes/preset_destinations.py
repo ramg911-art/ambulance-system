@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_admin
 from app.models import FixedTariff, PresetDestination
 from app.schemas.preset_destination import (
     PresetDestinationCreate,
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/preset-destinations", tags=["preset-destinations"])
 
 
 @router.get("", response_model=list[PresetDestinationResponse])
-def list_preset_destinations(db: DbSession) -> list[PresetDestination]:
+def list_preset_destinations(db: DbSession, _admin=Depends(get_current_admin)) -> list[PresetDestination]:
     """List all preset destinations."""
     return db.query(PresetDestination).all()
 
@@ -38,7 +38,7 @@ def get_destinations_for_source(
 
 
 @router.post("", response_model=PresetDestinationResponse)
-def create_preset_destination(data: PresetDestinationCreate, db: DbSession) -> PresetDestination:
+def create_preset_destination(data: PresetDestinationCreate, db: DbSession, _admin=Depends(get_current_admin)) -> PresetDestination:
     """Create a preset destination."""
     dest = PresetDestination(
         name=data.name,
@@ -52,7 +52,7 @@ def create_preset_destination(data: PresetDestinationCreate, db: DbSession) -> P
 
 
 @router.get("/{dest_id}", response_model=PresetDestinationResponse)
-def get_preset_destination(dest_id: int, db: DbSession) -> PresetDestination:
+def get_preset_destination(dest_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> PresetDestination:
     """Get preset destination by ID."""
     dest = db.query(PresetDestination).filter(PresetDestination.id == dest_id).first()
     if not dest:
@@ -62,7 +62,7 @@ def get_preset_destination(dest_id: int, db: DbSession) -> PresetDestination:
 
 @router.patch("/{dest_id}", response_model=PresetDestinationResponse)
 def update_preset_destination(
-    dest_id: int, data: PresetDestinationUpdate, db: DbSession
+    dest_id: int, data: PresetDestinationUpdate, db: DbSession, _admin=Depends(get_current_admin)
 ) -> PresetDestination:
     """Update a preset destination."""
     dest = db.query(PresetDestination).filter(PresetDestination.id == dest_id).first()
@@ -80,7 +80,7 @@ def update_preset_destination(
 
 
 @router.delete("/{dest_id}")
-def delete_preset_destination(dest_id: int, db: DbSession) -> dict:
+def delete_preset_destination(dest_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> dict:
     """Delete a preset destination."""
     dest = db.query(PresetDestination).filter(PresetDestination.id == dest_id).first()
     if not dest:

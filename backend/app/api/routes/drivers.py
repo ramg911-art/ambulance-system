@@ -2,15 +2,15 @@
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_admin
 from app.core.security import hash_password
 from app.models import Driver, Organization
 from app.schemas.driver import DriverCreate, DriverUpdate, DriverResponse
 
-router = APIRouter(prefix="/drivers", tags=["drivers"])
+router = APIRouter(prefix="/drivers", tags=["drivers"], dependencies=[Depends(get_current_admin)])
 
 
 @router.get("", response_model=list[DriverResponse])

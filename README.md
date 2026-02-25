@@ -202,6 +202,7 @@ SECRET_KEY=change_this_to_long_random_string_in_production
 ## API Endpoints
 
 - `POST /auth/login` - Driver login
+- `POST /auth/admin-login` - Admin login
 - `GET /preset-locations/nearby` - Auto-detect preset location by lat/lng
 - `GET /preset-destinations/by-source/{id}` - Destinations for preset location
 - `POST /trips` - Create trip
@@ -214,5 +215,7 @@ SECRET_KEY=change_this_to_long_random_string_in_production
 
 ## Default Seed Credentials
 
-- Phone: +1234567890
-- Password: driver123
+- **Driver:** Phone +1234567890 / Password driver123
+- **Admin:** Username admin / Password admin123
+
+Run `python scripts/seed_data.py` to create these. The admin user is created even if org data already exists.

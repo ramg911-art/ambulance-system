@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_admin
 from app.models import FixedTariff
 from app.models import DistanceTariffConfig
 from app.schemas.tariff import (
@@ -18,7 +18,7 @@ from app.services.tariff_service import (
     get_fallback_rate_per_km,
 )
 
-router = APIRouter(prefix="/tariffs", tags=["tariffs"])
+router = APIRouter(prefix="/tariffs", tags=["tariffs"], dependencies=[Depends(get_current_admin)])
 
 
 @router.get("/fixed")

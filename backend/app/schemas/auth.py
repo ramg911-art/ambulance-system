@@ -9,6 +9,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class AdminLoginRequest(BaseModel):
+    """Admin login request."""
+
+    username: str
+    password: str
+
+
 class TokenResponse(BaseModel):
     """JWT token response."""
 

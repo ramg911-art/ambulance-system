@@ -1,13 +1,13 @@
 """Organization routes - CRUD for admin."""
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_admin
 from app.models import Organization
 
-router = APIRouter(prefix="/organizations", tags=["organizations"])
+router = APIRouter(prefix="/organizations", tags=["organizations"], dependencies=[Depends(get_current_admin)])
 
 
 @router.get("")

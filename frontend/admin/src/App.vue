@@ -1,6 +1,6 @@
 <template>
   <div class="app">
-    <Sidebar v-if="!$route.meta.hideLayout" />
+    <Sidebar v-if="!$route.meta.guest" />
     <main class="main">
       <router-view />
     </main>
