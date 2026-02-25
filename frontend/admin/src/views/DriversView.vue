@@ -122,14 +122,19 @@ async function save() {
     await load()
   } catch (e) {
     const err = e.response?.data
+    const status = e.response?.status
+    const url = e.config?.baseURL && e.config?.url ? `${e.config.baseURL.replace(/\/$/, '')}${e.config.url}` : ''
     let msg = 'Failed to save driver'
     if (!e.response) {
-      msg = 'Network error - check if backend is running and API URL is correct'
+      msg = 'Network error - request did not reach server. Check: (1) Backend running, (2) API URL correct (see console), (3) CORS/proxy allows POST'
     } else if (err?.detail) {
       msg = typeof err.detail === 'string' ? err.detail : (Array.isArray(err.detail) ? err.detail.map(d => d.msg || d).join(', ') : String(err.detail))
-    } else if (e.response?.status) {
-      msg = `Error ${e.response.status}: ${msg}`
+    } else if (status) {
+      msg = `Error ${status}: ${msg}`
     }
+    if (url) msg += `\n\nURL: ${url}`
+    msg += '\n\nOpen Console (F12) for details.'
+    console.error('[DriversView] save failed', { status, url, error: e })
     alert(msg)
   }
 }

@@ -52,7 +52,25 @@ npm run build
 # If using serve, restart the admin service too
 ```
 
-### 4. Ensure DB has new tables
+### 4. API URL for production (if vehicles/drivers won't save)
+
+If the admin and backend run on different hosts/ports, the admin must know the backend URL.
+
+**Option A – Build-time:** Set when building the admin:
+```bash
+cd frontend/admin
+VITE_API_URL=https://api.yourdomain.com npm run build
+```
+
+**Option B – Runtime (no rebuild):** After build, edit `dist/config.json` and set:
+```json
+{ "apiUrl": "https://api.yourdomain.com" }
+```
+The admin fetches this on load and uses it for API calls.
+
+**Option C – Reverse proxy:** Configure nginx (or similar) so `/api` on the admin host proxies to the backend. Then the default `/api` base URL works.
+
+### 5. Ensure DB has new tables
 
 The `distance_tariff_config` table is created automatically on first backend startup after the model is added. If it’s missing:
 

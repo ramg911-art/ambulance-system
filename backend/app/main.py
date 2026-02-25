@@ -1,7 +1,11 @@
 """Ambulance Fleet Management - FastAPI application."""
+import logging
+import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
@@ -40,6 +44,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log every request to help debug save failures."""
+    start = time.time()
+    response = await call_next(request)
+    duration = (time.time() - start) * 1000
+    logging.info(
+        "%s %s -> %s (%.0fms)",
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration,
+    )
+    return response
 
 app.include_router(auth.router)
 app.include_router(trips.router)

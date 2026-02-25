@@ -1,4 +1,5 @@
 """Driver routes - CRUD for admin/dispatch."""
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -27,27 +28,37 @@ def list_drivers(
     return q.all()
 
 
+logger = logging.getLogger(__name__)
+
+
 @router.post("", response_model=DriverResponse)
 def create_driver(data: DriverCreate, db: DbSession) -> Driver:
     """Create a driver."""
-    org = db.query(Organization).filter(Organization.id == data.organization_id).first()
-    if not org:
-        raise HTTPException(status_code=400, detail=f"Organization {data.organization_id} not found. Run seed_data.py first.")
-    existing = db.query(Driver).filter(Driver.phone == data.phone).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Phone number already registered")
-    d = Driver(
-        organization_id=data.organization_id,
-        name=data.name,
-        phone=data.phone,
-        password_hash=hash_password(data.password),
-        license_number=data.license_number,
-        active=data.active,
-    )
-    db.add(d)
-    db.commit()
-    db.refresh(d)
-    return d
+    try:
+        org = db.query(Organization).filter(Organization.id == data.organization_id).first()
+        if not org:
+            raise HTTPException(status_code=400, detail=f"Organization {data.organization_id} not found. Run seed_data.py first.")
+        existing = db.query(Driver).filter(Driver.phone == data.phone).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Phone number already registered")
+        d = Driver(
+            organization_id=data.organization_id,
+            name=data.name,
+            phone=data.phone,
+            password_hash=hash_password(data.password),
+            license_number=data.license_number,
+            active=data.active,
+        )
+        db.add(d)
+        db.commit()
+        db.refresh(d)
+        logger.info("Created driver id=%s phone=%s org=%s", d.id, data.phone, data.organization_id)
+        return d
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("create_driver failed: %s", e)
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 
 @router.get("/{driver_id}", response_model=DriverResponse)

@@ -1,4 +1,5 @@
 """Vehicle routes - CRUD and live GPS."""
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -44,31 +45,41 @@ def get_live_vehicle_locations(db: DbSession) -> list[VehicleLocationResponse]:
     ]
 
 
+logger = logging.getLogger(__name__)
+
+
 @router.post("", response_model=VehicleResponse)
 def create_vehicle(data: VehicleCreate, db: DbSession) -> Vehicle:
     """Create a vehicle."""
-    org = db.query(Organization).filter(Organization.id == data.organization_id).first()
-    if not org:
-        raise HTTPException(status_code=400, detail=f"Organization {data.organization_id} not found. Run seed_data.py first.")
-    reg = (data.registration_number or "").strip()
-    if not reg:
-        raise HTTPException(status_code=400, detail="Registration number is required")
-    existing = db.query(Vehicle).filter(
-        Vehicle.organization_id == data.organization_id,
-        Vehicle.registration_number == reg,
-    ).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Vehicle with this registration already exists")
-    v = Vehicle(
-        organization_id=data.organization_id,
-        registration_number=reg,
-        make_model=(data.make_model or "").strip() or None,
-        active=data.active,
-    )
-    db.add(v)
-    db.commit()
-    db.refresh(v)
-    return v
+    try:
+        org = db.query(Organization).filter(Organization.id == data.organization_id).first()
+        if not org:
+            raise HTTPException(status_code=400, detail=f"Organization {data.organization_id} not found. Run seed_data.py first.")
+        reg = (data.registration_number or "").strip()
+        if not reg:
+            raise HTTPException(status_code=400, detail="Registration number is required")
+        existing = db.query(Vehicle).filter(
+            Vehicle.organization_id == data.organization_id,
+            Vehicle.registration_number == reg,
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Vehicle with this registration already exists")
+        v = Vehicle(
+            organization_id=data.organization_id,
+            registration_number=reg,
+            make_model=(data.make_model or "").strip() or None,
+            active=data.active,
+        )
+        db.add(v)
+        db.commit()
+        db.refresh(v)
+        logger.info("Created vehicle id=%s reg=%s org=%s", v.id, reg, data.organization_id)
+        return v
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("create_vehicle failed: %s", e)
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 
 @router.get("/{vehicle_id}", response_model=VehicleResponse)
