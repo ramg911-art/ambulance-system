@@ -1,0 +1,16 @@
+[Unit]
+Description=Ambulance Fleet Backend API
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=ambulance
+Group=ambulance
+WorkingDirectory=/opt/ambulance-system/backend
+Environment="PATH=/opt/ambulance-system/backend/venv/bin"
+ExecStart=/opt/ambulance-system/backend/venv/bin/python run.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

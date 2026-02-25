@@ -1,0 +1,15 @@
+[Unit]
+Description=Ambulance Driver Frontend
+After=network.target
+
+[Service]
+Type=simple
+User=ambulance
+Group=ambulance
+WorkingDirectory=/opt/ambulance-system/frontend/driver
+ExecStart=/usr/bin/npx serve -s dist -l 5175
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
