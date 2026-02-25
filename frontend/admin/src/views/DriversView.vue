@@ -123,8 +123,12 @@ async function save() {
   } catch (e) {
     const err = e.response?.data
     let msg = 'Failed to save driver'
-    if (err?.detail) {
+    if (!e.response) {
+      msg = 'Network error - check if backend is running and API URL is correct'
+    } else if (err?.detail) {
       msg = typeof err.detail === 'string' ? err.detail : (Array.isArray(err.detail) ? err.detail.map(d => d.msg || d).join(', ') : String(err.detail))
+    } else if (e.response?.status) {
+      msg = `Error ${e.response.status}: ${msg}`
     }
     alert(msg)
   }

@@ -17,12 +17,12 @@
         </thead>
         <tbody>
           <tr v-for="l in locations" :key="l.id">
-            <td>{{ l.id }}</td>
-            <td>{{ l.name }}</td>
-            <td>{{ l.latitude.toFixed(4) }}</td>
-            <td>{{ l.longitude.toFixed(4) }}</td>
-            <td>{{ l.radius_meters }}</td>
-            <td>{{ l.organization_id }}</td>
+            <td>{{ l.id ?? '-' }}</td>
+            <td>{{ l.name || '-' }}</td>
+            <td>{{ l.latitude != null ? Number(l.latitude).toFixed(4) : '-' }}</td>
+            <td>{{ l.longitude != null ? Number(l.longitude).toFixed(4) : '-' }}</td>
+            <td>{{ l.radius_meters ?? '-' }}</td>
+            <td>{{ l.organization_id ?? '-' }}</td>
             <td>
               <button class="btn-sm" @click="openEdit(l)">Edit</button>
               <button class="btn-sm btn-danger" @click="confirmDelete(l)">Delete</button>
@@ -73,8 +73,14 @@ const form = ref({
 })
 
 async function load() {
-  const { data } = await api.get('/preset-locations')
-  locations.value = data
+  try {
+    const res = await api.get('/preset-locations')
+    const data = res.data
+    locations.value = Array.isArray(data) ? data : (data?.data || data?.items || [])
+  } catch (e) {
+    console.error('Failed to load locations:', e)
+    locations.value = []
+  }
 }
 
 function openCreate() {

@@ -67,25 +67,41 @@ const form = ref({
   amount: 0,
 })
 
+function toArray(val) {
+  if (Array.isArray(val)) return val
+  if (val?.data) return Array.isArray(val.data) ? val.data : []
+  if (val?.items) return Array.isArray(val.items) ? val.items : []
+  return []
+}
+
 function sourceName(id) {
-  const loc = locations.value.find(l => l.id === id)
+  const arr = toArray(locations.value)
+  const loc = arr.find(l => l.id === id)
   return loc ? loc.name : id
 }
 
 function destName(id) {
-  const d = destinations.value.find(x => x.id === id)
+  const arr = toArray(destinations.value)
+  const d = arr.find(x => x.id === id)
   return d ? d.name : id
 }
 
 async function load() {
-  const [tRes, lRes, dRes] = await Promise.all([
-    api.get('/tariffs'),
-    api.get('/preset-locations'),
-    api.get('/preset-destinations'),
-  ])
-  tariffs.value = tRes.data
-  locations.value = lRes.data
-  destinations.value = dRes.data
+  try {
+    const [tRes, lRes, dRes] = await Promise.all([
+      api.get('/tariffs'),
+      api.get('/preset-locations'),
+      api.get('/preset-destinations'),
+    ])
+    tariffs.value = toArray(tRes.data)
+    locations.value = toArray(lRes.data)
+    destinations.value = toArray(dRes.data)
+  } catch (e) {
+    console.error('Failed to load tariffs:', e)
+    tariffs.value = []
+    locations.value = []
+    destinations.value = []
+  }
 }
 
 function openCreate() {

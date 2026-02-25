@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import DbSession
-from app.models import Vehicle
+from app.models import Organization, Vehicle
 from app.schemas.gps import VehicleLocationResponse
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse
 from app.services.gps_service import GPSService
@@ -47,6 +47,9 @@ def get_live_vehicle_locations(db: DbSession) -> list[VehicleLocationResponse]:
 @router.post("", response_model=VehicleResponse)
 def create_vehicle(data: VehicleCreate, db: DbSession) -> Vehicle:
     """Create a vehicle."""
+    org = db.query(Organization).filter(Organization.id == data.organization_id).first()
+    if not org:
+        raise HTTPException(status_code=400, detail=f"Organization {data.organization_id} not found. Run seed_data.py first.")
     reg = (data.registration_number or "").strip()
     if not reg:
         raise HTTPException(status_code=400, detail="Registration number is required")

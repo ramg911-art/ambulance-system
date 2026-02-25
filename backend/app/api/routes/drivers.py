@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import DbSession
 from app.core.security import hash_password
-from app.models import Driver
+from app.models import Driver, Organization
 from app.schemas.driver import DriverCreate, DriverUpdate, DriverResponse
 
 router = APIRouter(prefix="/drivers", tags=["drivers"])
@@ -30,6 +30,9 @@ def list_drivers(
 @router.post("", response_model=DriverResponse)
 def create_driver(data: DriverCreate, db: DbSession) -> Driver:
     """Create a driver."""
+    org = db.query(Organization).filter(Organization.id == data.organization_id).first()
+    if not org:
+        raise HTTPException(status_code=400, detail=f"Organization {data.organization_id} not found. Run seed_data.py first.")
     existing = db.query(Driver).filter(Driver.phone == data.phone).first()
     if existing:
         raise HTTPException(status_code=400, detail="Phone number already registered")

@@ -15,10 +15,10 @@
         </thead>
         <tbody>
           <tr v-for="d in destinations" :key="d.id">
-            <td>{{ d.id }}</td>
-            <td>{{ d.name }}</td>
-            <td>{{ d.latitude.toFixed(4) }}</td>
-            <td>{{ d.longitude.toFixed(4) }}</td>
+            <td>{{ d.id ?? '-' }}</td>
+            <td>{{ d.name || '-' }}</td>
+            <td>{{ d.latitude != null ? Number(d.latitude).toFixed(4) : '-' }}</td>
+            <td>{{ d.longitude != null ? Number(d.longitude).toFixed(4) : '-' }}</td>
             <td>
               <button class="btn-sm" @click="openEdit(d)">Edit</button>
               <button class="btn-sm btn-danger" @click="confirmDelete(d)">Delete</button>
@@ -57,8 +57,14 @@ const editingId = ref(null)
 const form = ref({ name: '', latitude: 0, longitude: 0 })
 
 async function load() {
-  const { data } = await api.get('/preset-destinations')
-  destinations.value = data
+  try {
+    const res = await api.get('/preset-destinations')
+    const data = res.data
+    destinations.value = Array.isArray(data) ? data : (data?.data || data?.items || [])
+  } catch (e) {
+    console.error('Failed to load destinations:', e)
+    destinations.value = []
+  }
 }
 
 function openCreate() {
