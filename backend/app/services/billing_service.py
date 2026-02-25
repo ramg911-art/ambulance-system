@@ -22,7 +22,7 @@ def calculate_trip_cost(db: Session, trip: Trip) -> float:
         if fixed:
             return fixed.amount
     distance = trip.distance_km or 0.0
-    return calculate_distance_tariff(distance)
+    return calculate_distance_tariff(distance, db)
 
 
 def create_invoice(db: Session, trip: Trip, amount: float) -> Invoice:

@@ -4,7 +4,15 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models import FixedTariff
+from app.models import DistanceTariffConfig, FixedTariff
+
+
+def get_fallback_rate_per_km(db: Session) -> float:
+    """Get fallback rate per km from DB, or config default."""
+    row = db.query(DistanceTariffConfig).filter(DistanceTariffConfig.id == 1).first()
+    if row:
+        return row.rate_per_km
+    return settings.distance_tariff_per_km
 
 
 def get_fixed_tariff(
@@ -25,6 +33,7 @@ def get_fixed_tariff(
     )
 
 
-def calculate_distance_tariff(distance_km: float) -> float:
+def calculate_distance_tariff(distance_km: float, db: Optional[Session] = None) -> float:
     """Calculate tariff based on distance using configured rate per km."""
-    return distance_km * settings.distance_tariff_per_km
+    rate = get_fallback_rate_per_km(db) if db else settings.distance_tariff_per_km
+    return distance_km * rate

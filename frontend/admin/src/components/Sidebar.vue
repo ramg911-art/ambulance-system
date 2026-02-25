@@ -5,9 +5,12 @@
       <router-link to="/">Dashboard</router-link>
       <router-link to="/live">Live Tracking</router-link>
       <router-link to="/trips">Trips</router-link>
+      <router-link to="/vehicles">Vehicles</router-link>
+      <router-link to="/drivers">Drivers</router-link>
       <router-link to="/preset-locations">Preset Locations</router-link>
       <router-link to="/preset-destinations">Preset Destinations</router-link>
       <router-link to="/tariffs">Tariffs</router-link>
+      <router-link to="/fallback-tariff">Fallback Tariff</router-link>
       <router-link to="/billing">Billing</router-link>
     </nav>
   </aside>

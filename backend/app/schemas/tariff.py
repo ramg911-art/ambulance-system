@@ -19,6 +19,18 @@ class FixedTariffUpdate(BaseModel):
     amount: Optional[float] = None
 
 
+class FallbackTariffResponse(BaseModel):
+    """Fallback (distance) tariff config."""
+
+    rate_per_km: float
+
+
+class FallbackTariffUpdate(BaseModel):
+    """Update fallback tariff."""
+
+    rate_per_km: float
+
+
 class FixedTariffResponse(BaseModel):
     """Fixed tariff response."""
 

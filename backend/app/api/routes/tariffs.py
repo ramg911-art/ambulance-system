@@ -4,8 +4,19 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import DbSession
 from app.models import FixedTariff
-from app.schemas.tariff import FixedTariffCreate, FixedTariffUpdate, FixedTariffResponse
-from app.services.tariff_service import get_fixed_tariff, calculate_distance_tariff
+from app.models import DistanceTariffConfig
+from app.schemas.tariff import (
+    FixedTariffCreate,
+    FixedTariffUpdate,
+    FixedTariffResponse,
+    FallbackTariffResponse,
+    FallbackTariffUpdate,
+)
+from app.services.tariff_service import (
+    get_fixed_tariff,
+    calculate_distance_tariff,
+    get_fallback_rate_per_km,
+)
 
 router = APIRouter(prefix="/tariffs", tags=["tariffs"])
 
@@ -25,10 +36,34 @@ def get_fixed_tariff_endpoint(
 
 
 @router.get("/distance")
-def get_distance_tariff(distance_km: float = Query(...)) -> dict:
+def get_distance_tariff(
+    db: DbSession,
+    distance_km: float = Query(...),
+) -> dict:
     """Calculate distance-based tariff for given km."""
-    amount = calculate_distance_tariff(distance_km)
+    amount = calculate_distance_tariff(distance_km, db)
     return {"distance_km": distance_km, "amount": amount}
+
+
+@router.get("/fallback", response_model=FallbackTariffResponse)
+def get_fallback_tariff(db: DbSession) -> dict:
+    """Get fallback (distance) tariff rate per km."""
+    rate = get_fallback_rate_per_km(db)
+    return {"rate_per_km": rate}
+
+
+@router.put("/fallback", response_model=FallbackTariffResponse)
+def update_fallback_tariff(data: FallbackTariffUpdate, db: DbSession) -> dict:
+    """Update fallback tariff rate per km."""
+    row = db.query(DistanceTariffConfig).filter(DistanceTariffConfig.id == 1).first()
+    if not row:
+        row = DistanceTariffConfig(id=1, rate_per_km=data.rate_per_km)
+        db.add(row)
+    else:
+        row.rate_per_km = data.rate_per_km
+    db.commit()
+    db.refresh(row)
+    return {"rate_per_km": row.rate_per_km}
 
 
 @router.get("", response_model=list[FixedTariffResponse])

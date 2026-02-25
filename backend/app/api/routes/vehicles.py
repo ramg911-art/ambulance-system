@@ -1,39 +1,31 @@
-"""Vehicle routes - list vehicles and live GPS."""
+"""Vehicle routes - CRUD and live GPS."""
 from typing import Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import DbSession
 from app.models import Vehicle
 from app.schemas.gps import VehicleLocationResponse
+from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse
 from app.services.gps_service import GPSService
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 
 
-@router.get("")
+@router.get("", response_model=list[VehicleResponse])
 def list_vehicles(
     db: DbSession,
     organization_id: Optional[int] = Query(None),
     active_only: bool = Query(True),
-) -> list[dict]:
+) -> list[Vehicle]:
     """List vehicles, optionally filtered by organization."""
     q = db.query(Vehicle)
     if organization_id:
         q = q.filter(Vehicle.organization_id == organization_id)
     if active_only:
         q = q.filter(Vehicle.active == True)
-    vehicles = q.all()
-    return [
-        {
-            "id": v.id,
-            "registration_number": v.registration_number,
-            "make_model": v.make_model,
-            "organization_id": v.organization_id,
-        }
-        for v in vehicles
-    ]
+    return q.all()
 
 
 @router.get("/live")
@@ -50,3 +42,57 @@ def get_live_vehicle_locations(db: DbSession) -> list[VehicleLocationResponse]:
         )
         for loc in locations
     ]
+
+
+@router.post("", response_model=VehicleResponse)
+def create_vehicle(data: VehicleCreate, db: DbSession) -> Vehicle:
+    """Create a vehicle."""
+    v = Vehicle(
+        organization_id=data.organization_id,
+        registration_number=data.registration_number,
+        make_model=data.make_model,
+        active=data.active,
+    )
+    db.add(v)
+    db.commit()
+    db.refresh(v)
+    return v
+
+
+@router.get("/{vehicle_id}", response_model=VehicleResponse)
+def get_vehicle(vehicle_id: int, db: DbSession) -> Vehicle:
+    """Get vehicle by ID."""
+    v = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
+    if not v:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    return v
+
+
+@router.patch("/{vehicle_id}", response_model=VehicleResponse)
+def update_vehicle(vehicle_id: int, data: VehicleUpdate, db: DbSession) -> Vehicle:
+    """Update a vehicle."""
+    v = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
+    if not v:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    if data.registration_number is not None:
+        v.registration_number = data.registration_number
+    if data.make_model is not None:
+        v.make_model = data.make_model
+    if data.active is not None:
+        v.active = data.active
+    db.commit()
+    db.refresh(v)
+    return v
+
+
+@router.delete("/{vehicle_id}")
+def delete_vehicle(vehicle_id: int, db: DbSession) -> dict:
+    """Delete a vehicle."""
+    v = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
+    if not v:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    db.delete(v)
+    db.commit()
+    return {"status": "deleted"}
+
+

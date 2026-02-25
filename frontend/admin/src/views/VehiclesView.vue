@@ -1,29 +1,29 @@
 <template>
-  <div class="tariffs">
-    <h1>Fixed Tariffs</h1>
-    <button class="btn-primary" @click="openCreate">+ Add Tariff</button>
+  <div class="vehicles">
+    <h1>Vehicles</h1>
+    <button class="btn-primary" @click="openCreate">+ Add Vehicle</button>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
             <th>ID</th>
-            <th>Source (Location)</th>
-            <th>Destination</th>
-            <th>Amount</th>
+            <th>Registration</th>
+            <th>Make/Model</th>
             <th>Org</th>
+            <th>Active</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="t in tariffs" :key="t.id">
-            <td>{{ t.id }}</td>
-            <td>{{ sourceName(t.source_id) }}</td>
-            <td>{{ destName(t.destination_id) }}</td>
-            <td>₹{{ t.amount }}</td>
-            <td>{{ t.organization_id }}</td>
+          <tr v-for="v in vehicles" :key="v.id">
+            <td>{{ v.id }}</td>
+            <td>{{ v.registration_number }}</td>
+            <td>{{ v.make_model || '-' }}</td>
+            <td>{{ v.organization_id }}</td>
+            <td>{{ v.active ? 'Yes' : 'No' }}</td>
             <td>
-              <button class="btn-sm" @click="openEdit(t)">Edit</button>
-              <button class="btn-sm btn-danger" @click="confirmDelete(t)">Delete</button>
+              <button class="btn-sm" @click="openEdit(v)">Edit</button>
+              <button class="btn-sm btn-danger" @click="confirmDelete(v)">Delete</button>
             </td>
           </tr>
         </tbody>
@@ -31,16 +31,15 @@
     </div>
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal">
-        <h3>{{ editingId ? 'Edit Tariff' : 'Add Tariff' }}</h3>
+        <h3>{{ editingId ? 'Edit Vehicle' : 'Add Vehicle' }}</h3>
         <form @submit.prevent="save">
           <label>Organization ID</label>
           <input v-model.number="form.organization_id" type="number" required :disabled="!!editingId" />
-          <label>Source (Preset Location ID)</label>
-          <input v-model.number="form.source_id" type="number" required :disabled="!!editingId" />
-          <label>Destination (Preset Destination ID)</label>
-          <input v-model.number="form.destination_id" type="number" required :disabled="!!editingId" />
-          <label>Amount (₹)</label>
-          <input v-model.number="form.amount" type="number" step="0.01" required />
+          <label>Registration Number</label>
+          <input v-model="form.registration_number" required />
+          <label>Make/Model</label>
+          <input v-model="form.make_model" />
+          <label><input type="checkbox" v-model="form.active" /> Active</label>
           <div class="modal-actions">
             <button type="button" @click="showModal = false">Cancel</button>
             <button type="submit">Save</button>
@@ -55,59 +54,43 @@
 import { ref, onMounted } from 'vue'
 import api from '../services/api'
 
-const tariffs = ref([])
-const locations = ref([])
-const destinations = ref([])
+const vehicles = ref([])
 const showModal = ref(false)
 const editingId = ref(null)
 const form = ref({
   organization_id: 1,
-  source_id: 1,
-  destination_id: 1,
-  amount: 0,
+  registration_number: '',
+  make_model: '',
+  active: true,
 })
 
-function sourceName(id) {
-  const loc = locations.value.find(l => l.id === id)
-  return loc ? loc.name : id
-}
-
-function destName(id) {
-  const d = destinations.value.find(x => x.id === id)
-  return d ? d.name : id
-}
-
 async function load() {
-  const [tRes, lRes, dRes] = await Promise.all([
-    api.get('/tariffs'),
-    api.get('/preset-locations'),
-    api.get('/preset-destinations'),
-  ])
-  tariffs.value = tRes.data
-  locations.value = lRes.data
-  destinations.value = dRes.data
+  const { data } = await api.get('/vehicles', { params: { active_only: false } })
+  vehicles.value = data
 }
 
 function openCreate() {
   editingId.value = null
-  form.value = { organization_id: 1, source_id: 1, destination_id: 1, amount: 0 }
-  if (locations.value.length) form.value.source_id = locations.value[0].id
-  if (destinations.value.length) form.value.destination_id = destinations.value[0].id
+  form.value = { organization_id: 1, registration_number: '', make_model: '', active: true }
   showModal.value = true
 }
 
-function openEdit(t) {
-  editingId.value = t.id
-  form.value = { ...t }
+function openEdit(v) {
+  editingId.value = v.id
+  form.value = { ...v }
   showModal.value = true
 }
 
 async function save() {
   try {
     if (editingId.value) {
-      await api.patch(`/tariffs/${editingId.value}`, { amount: form.value.amount })
+      await api.patch(`/vehicles/${editingId.value}`, {
+        registration_number: form.value.registration_number,
+        make_model: form.value.make_model,
+        active: form.value.active,
+      })
     } else {
-      await api.post('/tariffs', form.value)
+      await api.post('/vehicles', form.value)
     }
     showModal.value = false
     load()
@@ -116,10 +99,10 @@ async function save() {
   }
 }
 
-async function confirmDelete(t) {
-  if (!confirm('Delete this tariff?')) return
+async function confirmDelete(v) {
+  if (!confirm(`Delete vehicle ${v.registration_number}?`)) return
   try {
-    await api.delete(`/tariffs/${t.id}`)
+    await api.delete(`/vehicles/${v.id}`)
     load()
   } catch (e) {
     alert(e.response?.data?.detail || 'Failed to delete')
@@ -143,6 +126,6 @@ tr:not(:last-child) td { border-bottom: 1px solid #e2e8f0; }
 .modal { background: white; padding: 1.5rem; border-radius: 0.5rem; min-width: 320px; }
 .modal h3 { margin-bottom: 1rem; }
 .modal label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; }
-.modal input { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; }
+.modal input[type="text"], .modal input[type="number"] { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; }
 .modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
 </style>

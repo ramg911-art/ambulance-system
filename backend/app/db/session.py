@@ -18,6 +18,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db() -> None:
     """Create all tables. Used for initial setup or testing."""
+    import app.models  # noqa: F401 - ensure all models are registered
     Base.metadata.create_all(bind=engine)
 
 
