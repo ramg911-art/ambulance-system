@@ -1,0 +1,15 @@
+---
+description: Ambulance-system canonical project path - all edits must target this directory only
+alwaysApply: true
+---
+
+# Ambulance-System Project Path
+
+**Canonical project root:** `C:\Users\ramg9\ambulance-system`
+
+When making any changes to the ambulance-system project (backend, frontend, configs, etc.):
+
+- **Always** edit files under `C:\Users\ramg9\ambulance-system\`
+- **Never** edit `c:\Users\ramg9\optical_pos\ambulance-system\` — that is a different copy
+
+If the workspace or context points to `optical_pos`, resolve ambulance-system paths to `C:\Users\ramg9\ambulance-system`.

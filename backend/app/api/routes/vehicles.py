@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver, get_current_driver
-from app.models import Organization, Vehicle
+from app.models import Driver, Organization, Vehicle
 from app.schemas.gps import VehicleLocationResponse
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse
 from app.services.gps_service import GPSService
