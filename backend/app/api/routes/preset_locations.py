@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession, get_current_admin
+from app.api.deps import DbSession, get_current_admin, get_current_driver
 from app.models import PresetLocation
 from app.schemas.preset_location import (
     PresetLocationCreate,
@@ -14,6 +14,15 @@ from app.schemas.preset_location import (
 from app.services.preset_location_service import detect_preset_location
 
 router = APIRouter(prefix="/preset-locations", tags=["preset-locations"])
+
+
+@router.get("/for-driver", response_model=list[PresetLocationResponse])
+def list_preset_locations_for_driver(db: DbSession, driver=Depends(get_current_driver)) -> list[PresetLocation]:
+    """List preset locations for the driver's organization. Driver-only endpoint."""
+    return db.query(PresetLocation).filter(
+        PresetLocation.organization_id == driver.organization_id,
+        PresetLocation.active == True,
+    ).all()
 
 
 @router.get("", response_model=list[PresetLocationResponse])

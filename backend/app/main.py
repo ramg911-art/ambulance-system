@@ -60,7 +60,7 @@ app.add_middleware(
 # Enable CORS for all cfvision.in subdomains and localhost dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.cfvision\.in",
+    allow_origin_regex=r"https://.*\.cfvision\.in|http://localhost(:\d+)?|http://127\.0\.0\.1(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

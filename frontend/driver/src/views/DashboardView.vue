@@ -5,6 +5,17 @@
       <button @click="logout" class="logout">Logout</button>
     </header>
     <div class="content">
+      <div class="map-card">
+        <h3>Current Location</h3>
+        <p v-if="locationError" class="location-error">{{ locationError }}</p>
+        <p v-else-if="!currentPosition" class="location-hint">Detecting location...</p>
+        <div class="map-box">
+          <GoogleMap
+            :current-position="currentPosition"
+            readonly
+          />
+        </div>
+      </div>
       <div class="card" @click="$router.push('/start')">
         <span class="icon">🚑</span>
         <h2>Start New Trip</h2>
@@ -15,16 +26,56 @@
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
+import GoogleMap from '../components/GoogleMap.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
+
+const currentPosition = ref(null)
+const locationError = ref('')
+let watchId = null
+let intervalId = null
+
+function updatePosition(pos) {
+  currentPosition.value = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+  locationError.value = ''
+}
+
+function onGeoError(err) {
+  const isDenied = err?.code === 1
+  locationError.value = isDenied
+    ? 'Location access denied. Enable location for trip pickup detection.'
+    : 'Could not get location. Check GPS or network.'
+}
+
+function startLocationTracking() {
+  if (!navigator.geolocation) {
+    locationError.value = 'Geolocation not supported'
+    return
+  }
+  navigator.geolocation.getCurrentPosition(updatePosition, onGeoError, { enableHighAccuracy: true })
+  watchId = navigator.geolocation.watchPosition(updatePosition, onGeoError, {
+    enableHighAccuracy: true,
+    maximumAge: 5000,
+  })
+  intervalId = setInterval(() => {
+    navigator.geolocation.getCurrentPosition(updatePosition, onGeoError, { enableHighAccuracy: true })
+  }, 5000)
+}
 
 function logout() {
   auth.logout()
   router.push('/login')
 }
+
+onMounted(startLocationTracking)
+onUnmounted(() => {
+  if (watchId) navigator.geolocation.clearWatch(watchId)
+  if (intervalId) clearInterval(intervalId)
+})
 </script>
 
 <style scoped>
@@ -52,6 +103,21 @@ h1 { font-size: 1.25rem; }
 .content {
   padding: 1.5rem;
 }
+.map-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.map-card h3 {
+  font-size: 1rem;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+.location-error { color: #dc2626; font-size: 0.875rem; margin-bottom: 0.5rem; }
+.location-hint { color: #64748b; font-size: 0.875rem; margin-bottom: 0.5rem; }
+.map-box { height: 240px; border-radius: 0.5rem; overflow: hidden; }
 .card {
   background: white;
   border-radius: 1rem;

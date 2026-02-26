@@ -19,6 +19,13 @@
           <input v-model.number="manualLng" type="number" step="0.0001" placeholder="Longitude" />
           <button class="location-btn" @click="applyManualCoords">Use coordinates</button>
         </div>
+        <div v-if="(locationError || isSecureContextError) && presetLocations.length" class="fallback-preset">
+          <p class="hint">Or select pickup location:</p>
+          <select v-model="selectedPresetLocationFallback" @change="onPresetLocationSelected">
+            <option value="">-- Select preset location --</option>
+            <option v-for="pl in presetLocations" :key="pl.id" :value="pl.id">{{ pl.name }}</option>
+          </select>
+        </div>
       </div>
       <div v-else class="preset-detected">
         <p class="label">Pickup location detected</p>
@@ -32,6 +39,16 @@
             {{ d.name }} {{ fixedAmount ? `(₹${fixedAmount})` : '' }}
           </option>
         </select>
+      </div>
+      <div v-if="presetLocation && (currentLat || presetLocation.latitude)" class="map-section">
+        <h3>Route Preview</h3>
+        <div class="map-box">
+          <GoogleMap
+            :markers="tripMapMarkers"
+            :current-position="pickupPosition"
+            readonly
+          />
+        </div>
       </div>
       <div class="form-section">
         <label>Vehicle</label>
@@ -56,11 +73,12 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import api from '../services/api'
 import { createTrip, startTrip as apiStartTrip } from '../services/tripService'
+import GoogleMap from '../components/GoogleMap.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -78,6 +96,8 @@ const locationRequested = ref(false)
 const isSecureContextError = ref(false)
 const manualLat = ref(null)
 const manualLng = ref(null)
+const presetLocations = ref([])
+const selectedPresetLocationFallback = ref('')
 const submitError = ref('')
 const vehiclesError = ref('')
 const loading = ref(false)
@@ -91,6 +111,53 @@ function applyManualCoords() {
     currentLng.value = manualLng.value
   }
 }
+
+async function loadPresetLocationsForFallback() {
+  try {
+    const { data } = await api.get('/preset-locations/for-driver')
+    presetLocations.value = Array.isArray(data) ? data : []
+  } catch {
+    presetLocations.value = []
+  }
+}
+
+async function onPresetLocationSelected() {
+  const id = selectedPresetLocationFallback.value
+  if (!id) return
+  const pl = presetLocations.value.find((p) => p.id === parseInt(id, 10))
+  if (pl && pl.latitude != null && pl.longitude != null) {
+    presetLocation.value = pl
+    currentLat.value = pl.latitude
+    currentLng.value = pl.longitude
+    try {
+      const { data: dests } = await api.get(`/preset-destinations/by-source/${pl.id}`, {
+        params: { organization_id: orgId.value },
+      })
+      destinations.value = dests || []
+      selectedDestination.value = dests?.[0]?.id || ''
+    } catch {
+      destinations.value = []
+      selectedDestination.value = ''
+    }
+  }
+}
+
+const pickupPosition = computed(() => {
+  if (currentLat.value != null && currentLng.value != null) {
+    return { lat: currentLat.value, lng: currentLng.value }
+  }
+  if (presetLocation.value?.latitude != null && presetLocation.value?.longitude != null) {
+    return { lat: presetLocation.value.latitude, lng: presetLocation.value.longitude }
+  }
+  return null
+})
+
+const tripMapMarkers = computed(() => {
+  if (!selectedDestination.value) return []
+  const dest = destinations.value.find((d) => d.id === parseInt(selectedDestination.value, 10))
+  if (!dest || dest.latitude == null || dest.longitude == null) return []
+  return [{ lat: dest.latitude, lng: dest.longitude, name: dest.name }]
+})
 
 function requestLocation() {
   if (!navigator.geolocation) {
@@ -198,6 +265,7 @@ onMounted(async () => {
     locationError.value = 'Geolocation not supported'
   }
   orgId.value = auth.driver?.organization_id ?? 1
+  await loadPresetLocationsForFallback()
   if (!orgId.value && auth.driver?.id) {
     try {
       const { data } = await api.get('/auth/me')
@@ -210,7 +278,7 @@ onMounted(async () => {
 })
 
 watch([currentLat, currentLng], () => {
-  if (currentLat.value && currentLng.value) detectPresetLocation()
+  if (currentLat.value && currentLng.value && !selectedPresetLocationFallback.value) detectPresetLocation()
 }, { immediate: true })
 
 onUnmounted(() => {
@@ -337,4 +405,14 @@ h2 { font-size: 1.25rem; color: #1e293b; }
   cursor: pointer;
 }
 .retry-btn:hover { background: #e2e8f0; }
+.fallback-preset { margin-top: 1rem; }
+.fallback-preset select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+}
+.map-section { margin-top: 1rem; }
+.map-section h3 { font-size: 0.875rem; color: #475569; margin-bottom: 0.5rem; }
+.map-box { height: 220px; border-radius: 0.5rem; overflow: hidden; }
 </style>

@@ -2,6 +2,15 @@
   <div class="preset-locations">
     <h1>Preset Locations</h1>
     <button class="btn-primary" @click="openCreate">+ Add Location</button>
+    <div class="map-section" v-if="locations.length">
+      <h3>All Locations</h3>
+      <div class="map-box">
+        <GoogleMap
+          :markers="locationMarkers"
+          readonly
+        />
+      </div>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -32,8 +41,16 @@
       </table>
     </div>
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-      <div class="modal">
+      <div class="modal modal-wide">
         <h3>{{ editingId ? 'Edit Location' : 'Add Location' }}</h3>
+        <p class="map-hint">Click on map to select location, or drag the marker</p>
+        <div class="modal-map">
+          <GoogleMap
+            :model-value="formCoords"
+            @update:model-value="onMapSelect"
+            :readonly="false"
+          />
+        </div>
         <form @submit.prevent="save">
           <label>Organization ID</label>
           <input v-model.number="form.organization_id" type="number" required :disabled="!!editingId" />
@@ -57,8 +74,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '../services/api'
+import GoogleMap from '../components/GoogleMap.vue'
 
 const locations = ref([])
 const showModal = ref(false)
@@ -71,6 +89,23 @@ const form = ref({
   radius_meters: 100,
   active: true,
 })
+
+const formCoords = computed(() =>
+  form.value.latitude != null && form.value.longitude != null
+    ? { lat: form.value.latitude, lng: form.value.longitude }
+    : null
+)
+
+const locationMarkers = computed(() =>
+  locations.value
+    .filter((l) => l.latitude != null && l.longitude != null)
+    .map((l) => ({ lat: l.latitude, lng: l.longitude, name: l.name }))
+)
+
+function onMapSelect(pos) {
+  form.value.latitude = pos.lat
+  form.value.longitude = pos.lng
+}
 
 async function load() {
   try {
@@ -85,7 +120,7 @@ async function load() {
 
 function openCreate() {
   editingId.value = null
-  form.value = { organization_id: 1, name: '', latitude: 0, longitude: 0, radius_meters: 100, active: true }
+  form.value = { organization_id: 1, name: '', latitude: 12.9716, longitude: 77.5946, radius_meters: 100, active: true }
   showModal.value = true
 }
 
@@ -134,6 +169,12 @@ th { background: #f8fafc; font-size: 0.875rem; color: #64748b; }
 tr:not(:last-child) td { border-bottom: 1px solid #e2e8f0; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
 .modal { background: white; padding: 1.5rem; border-radius: 0.5rem; min-width: 320px; max-height: 90vh; overflow-y: auto; }
+.modal-wide { min-width: 480px; max-width: 90vw; }
+.map-section { margin-bottom: 1rem; }
+.map-section h3 { margin-bottom: 0.5rem; font-size: 1rem; color: #64748b; }
+.map-box { height: 320px; border-radius: 0.5rem; overflow: hidden; border: 1px solid #e2e8f0; }
+.modal-map { height: 260px; margin-bottom: 1rem; border-radius: 0.5rem; overflow: hidden; }
+.map-hint { font-size: 0.875rem; color: #64748b; margin-bottom: 0.5rem; }
 .modal h3 { margin-bottom: 1rem; }
 .modal label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; }
 .modal input { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; }
