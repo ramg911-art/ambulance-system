@@ -37,12 +37,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# CORS: explicit origins required when allow_credentials=True (browsers reject * with credentials)
+CORS_ORIGINS = [
+    "https://driver.cfvision.in",
+    "https://ambuadmin.cfvision.in",
+    "https://ambu.cfvision.in",
+    "http://localhost:5175",
+    "http://localhost:5176",
+    "http://127.0.0.1:5175",
+    "http://127.0.0.1:5176",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
