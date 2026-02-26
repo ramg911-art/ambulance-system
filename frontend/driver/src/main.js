@@ -10,9 +10,13 @@ async function init() {
     const c = await r.json()
     if (c?.apiUrl && typeof c.apiUrl === 'string') {
       api.defaults.baseURL = c.apiUrl.replace(/\/$/, '')
-      console.info('[API] Using runtime config.apiUrl:', api.defaults.baseURL)
+      console.info('[Driver API] baseURL:', api.defaults.baseURL)
+    } else {
+      console.info('[Driver API] baseURL:', api.defaults.baseURL, '(set apiUrl in config.json)')
     }
-  } catch (_) {}
+  } catch (e) {
+    console.warn('[Driver API] config.json not found, using default:', api.defaults.baseURL)
+  }
   const app = createApp(App)
   app.use(createPinia())
   app.use(router)

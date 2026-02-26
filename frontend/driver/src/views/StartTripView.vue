@@ -10,9 +10,15 @@
         <p v-else-if="!locationRequested">Tap below to enable location (required for pickup detection)</p>
         <p v-else>Detecting pickup location...</p>
         <p class="coords" v-if="currentLat">📍 {{ currentLat.toFixed(5) }}, {{ currentLng.toFixed(5) }}</p>
-        <button v-if="!currentLat" class="location-btn" @click="requestLocation">
+        <button v-if="!currentLat && !isSecureContextError" class="location-btn" @click="requestLocation">
           {{ locationError ? 'Retry location' : 'Allow location access' }}
         </button>
+        <div v-if="isSecureContextError" class="manual-coords">
+          <p class="hint">Enter coordinates manually (location requires HTTPS):</p>
+          <input v-model.number="manualLat" type="number" step="0.0001" placeholder="Latitude" />
+          <input v-model.number="manualLng" type="number" step="0.0001" placeholder="Longitude" />
+          <button class="location-btn" @click="applyManualCoords">Use coordinates</button>
+        </div>
       </div>
       <div v-else class="preset-detected">
         <p class="label">Pickup location detected</p>
@@ -34,7 +40,8 @@
           <option v-for="v in vehicles" :key="v.id" :value="v.id">{{ v.registration_number }}</option>
         </select>
         <p v-if="vehiclesError" class="error">{{ vehiclesError }}</p>
-        <p v-else-if="!vehicles.length" class="hint">No vehicles found. Ensure driver config.json has correct apiUrl.</p>
+        <p v-else-if="!vehicles.length" class="hint">No vehicles found.</p>
+        <button v-if="vehiclesError || !vehicles.length" class="retry-btn" @click="loadVehicles">Retry load vehicles</button>
       </div>
       <p v-if="submitError" class="error">{{ submitError }}</p>
       <button
@@ -68,12 +75,22 @@ const currentLat = ref(null)
 const currentLng = ref(null)
 const locationError = ref('')
 const locationRequested = ref(false)
+const isSecureContextError = ref(false)
+const manualLat = ref(null)
+const manualLng = ref(null)
 const submitError = ref('')
 const vehiclesError = ref('')
 const loading = ref(false)
 
 const ORG_ID = 1
 let watchId = null
+
+function applyManualCoords() {
+  if (manualLat.value != null && manualLng.value != null && !isNaN(manualLat.value) && !isNaN(manualLng.value)) {
+    currentLat.value = manualLat.value
+    currentLng.value = manualLng.value
+  }
+}
 
 function requestLocation() {
   if (!navigator.geolocation) {
@@ -148,14 +165,18 @@ function onLocation(pos) {
 }
 
 function onLocationError(err) {
-  locationError.value = 'Enable location access to detect pickup'
-  console.error(err)
+  const isSecureOrigin = err?.code === 1 && err?.message?.toLowerCase().includes('secure')
+  if (isSecureOrigin) {
+    locationError.value = 'Location requires HTTPS. Serve app over HTTPS, or enter coordinates manually below.'
+    isSecureContextError.value = true
+  } else {
+    locationError.value = 'Enable location access to detect pickup'
+  }
+  console.error('Geolocation error:', err)
 }
 
-onMounted(async () => {
-  if (!navigator.geolocation) {
-    locationError.value = 'Geolocation not supported'
-  }
+async function loadVehicles() {
+  vehiclesError.value = ''
   try {
     const { data } = await api.get('/vehicles', {
       params: { organization_id: ORG_ID, active_only: false },
@@ -165,9 +186,17 @@ onMounted(async () => {
     if (list.length) selectedVehicle.value = list[0].id
   } catch (e) {
     vehicles.value = []
-    vehiclesError.value = e.response?.data?.detail || e.message || 'Failed to load vehicles'
-    console.error('Failed to load vehicles:', e)
+    const msg = e.response?.data?.detail || e.message || 'Failed to load vehicles'
+    vehiclesError.value = msg + (api.defaults.baseURL ? ` (API: ${api.defaults.baseURL})` : '')
+    console.error('Failed to load vehicles:', api.defaults.baseURL, e)
   }
+}
+
+onMounted(async () => {
+  if (!navigator.geolocation) {
+    locationError.value = 'Geolocation not supported'
+  }
+  await loadVehicles()
 })
 
 watch([currentLat, currentLng], () => {
@@ -277,4 +306,25 @@ h2 { font-size: 1.25rem; color: #1e293b; }
   cursor: pointer;
 }
 .location-btn:active { opacity: 0.9; }
+.manual-coords {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.manual-coords input {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+}
+.retry-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.retry-btn:hover { background: #e2e8f0; }
 </style>
