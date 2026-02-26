@@ -7,6 +7,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api.routes import (
     auth,
@@ -37,6 +39,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Trust Cloudflare proxy headers
+app.add_middleware(
+    ProxyHeadersMiddleware,
+    trusted_hosts="*"
+)
+
+# Restrict allowed hosts for security
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=[
+        "ambu.cfvision.in",
+        "driver.cfvision.in",
+        "ambuadmin.cfvision.in",
+        "localhost",
+        "127.0.0.1"
+    ]
+)
+
+# Enable CORS for all cfvision.in subdomains and localhost dev
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"https://.*\.cfvision\.in",
