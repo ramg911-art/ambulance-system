@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
     auth,
@@ -36,41 +37,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS: Cloudflare Tunnel may not forward preflight; handle OPTIONS explicitly
-CORS_ORIGINS = [
+origins = [
     "https://driver.cfvision.in",
-    "https://ambuadmin.cfvision.in",
     "https://ambu.cfvision.in",
-    "http://localhost:5175",
-    "http://localhost:5176",
-    "http://127.0.0.1:5175",
-    "http://127.0.0.1:5176",
+    "http://localhost:5173",
+    "http://localhost:3000",
 ]
 
-
-@app.middleware("http")
-async def cors_middleware(request: Request, call_next):
-    """CORS: handle preflight OPTIONS and add headers to all responses."""
-    from starlette.responses import Response
-
-    origin = request.headers.get("origin", "")
-    allowed = origin in CORS_ORIGINS or (origin and ".cfvision.in" in origin)
-    allow_origin = origin if allowed else CORS_ORIGINS[0] if CORS_ORIGINS else "*"
-
-    cors_headers = {
-        "Access-Control-Allow-Origin": allow_origin,
-        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Credentials": "true",
-    }
-
-    if request.method == "OPTIONS":
-        return Response(status_code=200, headers={**cors_headers, "Access-Control-Max-Age": "86400"})
-
-    response = await call_next(request)
-    for k, v in cors_headers.items():
-        response.headers[k] = v
-    return response
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.middleware("http")
