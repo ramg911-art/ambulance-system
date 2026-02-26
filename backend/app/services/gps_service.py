@@ -1,5 +1,6 @@
 """GPS service - live tracking via Redis and GPS log storage."""
 import json
+import logging
 from datetime import datetime
 from typing import Optional
 
@@ -8,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models import GPSLog, Vehicle
+
+logger = logging.getLogger(__name__)
 
 
 class GPSService:
@@ -43,11 +46,14 @@ class GPSService:
             "trip_id": trip_id,
             "last_updated": datetime.utcnow().isoformat(),
         }
-        self.redis_client.setex(
-            key,
-            self.LIVE_TTL,
-            json.dumps(data),
-        )
+        try:
+            self.redis_client.setex(
+                key,
+                self.LIVE_TTL,
+                json.dumps(data),
+            )
+        except redis.ConnectionError as e:
+            logger.warning("Redis unavailable, skipping live location update: %s", e)
 
     def store_gps_log(
         self,
@@ -70,10 +76,14 @@ class GPSService:
 
     def get_live_vehicle_locations(self) -> list[dict]:
         """Get all live vehicle locations from Redis."""
-        keys = self.redis_client.keys(f"{self.LIVE_KEY_PREFIX}*")
-        result = []
-        for key in keys:
-            data = self.redis_client.get(key)
-            if data:
-                result.append(json.loads(data))
-        return result
+        try:
+            keys = self.redis_client.keys(f"{self.LIVE_KEY_PREFIX}*")
+            result = []
+            for key in keys:
+                data = self.redis_client.get(key)
+                if data:
+                    result.append(json.loads(data))
+            return result
+        except redis.ConnectionError as e:
+            logger.warning("Redis unavailable, returning empty live locations: %s", e)
+            return []
