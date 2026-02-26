@@ -4,8 +4,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession, get_current_admin
-from app.models import Trip
+from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver
+from app.models import Driver, Trip
 from app.schemas.trip import TripCreate, TripResponse
 from app.services.trip_service import create_trip, start_trip, end_trip
 
@@ -39,11 +39,17 @@ def post_trip(data: TripCreate, db: DbSession) -> Trip:
 
 
 @router.get("/{trip_id}", response_model=TripResponse)
-def get_trip(trip_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> Trip:
-    """Get trip by ID."""
+def get_trip(
+    trip_id: int,
+    db: DbSession,
+    user=Depends(get_current_admin_or_driver),
+) -> Trip:
+    """Get trip by ID. Admin can get any trip; driver can get only their own."""
     trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+    if isinstance(user, Driver) and trip.driver_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this trip")
     return trip
 
 

@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession, get_current_admin
+from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver
 from app.models import FixedTariff
 from app.models import DistanceTariffConfig
 from app.schemas.tariff import (
@@ -18,12 +18,13 @@ from app.services.tariff_service import (
     get_fallback_rate_per_km,
 )
 
-router = APIRouter(prefix="/tariffs", tags=["tariffs"], dependencies=[Depends(get_current_admin)])
+router = APIRouter(prefix="/tariffs", tags=["tariffs"])
 
 
 @router.get("/fixed")
 def get_fixed_tariff_endpoint(
     db: DbSession,
+    _user=Depends(get_current_admin_or_driver),
     organization_id: int = Query(...),
     source_id: int = Query(...),
     destination_id: int = Query(...),
@@ -38,6 +39,7 @@ def get_fixed_tariff_endpoint(
 @router.get("/distance")
 def get_distance_tariff(
     db: DbSession,
+    _user=Depends(get_current_admin_or_driver),
     distance_km: float = Query(...),
 ) -> dict:
     """Calculate distance-based tariff for given km."""
@@ -46,14 +48,14 @@ def get_distance_tariff(
 
 
 @router.get("/fallback", response_model=FallbackTariffResponse)
-def get_fallback_tariff(db: DbSession) -> dict:
+def get_fallback_tariff(db: DbSession, _admin=Depends(get_current_admin)) -> dict:
     """Get fallback (distance) tariff rate per km."""
     rate = get_fallback_rate_per_km(db)
     return {"rate_per_km": rate}
 
 
 @router.put("/fallback", response_model=FallbackTariffResponse)
-def update_fallback_tariff(data: FallbackTariffUpdate, db: DbSession) -> dict:
+def update_fallback_tariff(data: FallbackTariffUpdate, db: DbSession, _admin=Depends(get_current_admin)) -> dict:
     """Update fallback tariff rate per km."""
     row = db.query(DistanceTariffConfig).filter(DistanceTariffConfig.id == 1).first()
     if not row:
@@ -69,6 +71,7 @@ def update_fallback_tariff(data: FallbackTariffUpdate, db: DbSession) -> dict:
 @router.get("", response_model=list[FixedTariffResponse])
 def list_fixed_tariffs(
     db: DbSession,
+    _admin=Depends(get_current_admin),
     organization_id: int | None = Query(None),
 ) -> list[FixedTariff]:
     """List fixed tariffs, optionally filtered by organization."""
@@ -79,7 +82,7 @@ def list_fixed_tariffs(
 
 
 @router.post("", response_model=FixedTariffResponse)
-def create_fixed_tariff(data: FixedTariffCreate, db: DbSession) -> FixedTariff:
+def create_fixed_tariff(data: FixedTariffCreate, db: DbSession, _admin=Depends(get_current_admin)) -> FixedTariff:
     """Create a fixed tariff."""
     t = FixedTariff(
         organization_id=data.organization_id,
@@ -94,7 +97,7 @@ def create_fixed_tariff(data: FixedTariffCreate, db: DbSession) -> FixedTariff:
 
 
 @router.get("/{tariff_id}", response_model=FixedTariffResponse)
-def get_fixed_tariff_by_id(tariff_id: int, db: DbSession) -> FixedTariff:
+def get_fixed_tariff_by_id(tariff_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> FixedTariff:
     """Get fixed tariff by ID."""
     t = db.query(FixedTariff).filter(FixedTariff.id == tariff_id).first()
     if not t:
@@ -104,7 +107,7 @@ def get_fixed_tariff_by_id(tariff_id: int, db: DbSession) -> FixedTariff:
 
 @router.patch("/{tariff_id}", response_model=FixedTariffResponse)
 def update_fixed_tariff(
-    tariff_id: int, data: FixedTariffUpdate, db: DbSession
+    tariff_id: int, data: FixedTariffUpdate, db: DbSession, _admin=Depends(get_current_admin)
 ) -> FixedTariff:
     """Update a fixed tariff."""
     t = db.query(FixedTariff).filter(FixedTariff.id == tariff_id).first()
@@ -118,7 +121,7 @@ def update_fixed_tariff(
 
 
 @router.delete("/{tariff_id}")
-def delete_fixed_tariff(tariff_id: int, db: DbSession) -> dict:
+def delete_fixed_tariff(tariff_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> dict:
     """Delete a fixed tariff."""
     t = db.query(FixedTariff).filter(FixedTariff.id == tariff_id).first()
     if not t:

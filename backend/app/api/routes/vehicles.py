@@ -5,18 +5,19 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession, get_current_admin
+from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver
 from app.models import Organization, Vehicle
 from app.schemas.gps import VehicleLocationResponse
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse
 from app.services.gps_service import GPSService
 
-router = APIRouter(prefix="/vehicles", tags=["vehicles"], dependencies=[Depends(get_current_admin)])
+router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 
 
 @router.get("", response_model=list[VehicleResponse])
 def list_vehicles(
     db: DbSession,
+    _user=Depends(get_current_admin_or_driver),
     organization_id: Optional[int] = Query(None),
     active_only: bool = Query(True),
 ) -> list[Vehicle]:
@@ -30,7 +31,7 @@ def list_vehicles(
 
 
 @router.get("/live")
-def get_live_vehicle_locations(db: DbSession) -> list[VehicleLocationResponse]:
+def get_live_vehicle_locations(db: DbSession, _user=Depends(get_current_admin_or_driver)) -> list[VehicleLocationResponse]:
     """Get live vehicle locations from Redis."""
     svc = GPSService(db)
     locations = svc.get_live_vehicle_locations()
@@ -49,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("", response_model=VehicleResponse)
-def create_vehicle(data: VehicleCreate, db: DbSession) -> Vehicle:
+def create_vehicle(data: VehicleCreate, db: DbSession, _admin=Depends(get_current_admin)) -> Vehicle:
     """Create a vehicle."""
     try:
         org = db.query(Organization).filter(Organization.id == data.organization_id).first()
@@ -83,7 +84,7 @@ def create_vehicle(data: VehicleCreate, db: DbSession) -> Vehicle:
 
 
 @router.get("/{vehicle_id}", response_model=VehicleResponse)
-def get_vehicle(vehicle_id: int, db: DbSession) -> Vehicle:
+def get_vehicle(vehicle_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> Vehicle:
     """Get vehicle by ID."""
     v = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
     if not v:
@@ -92,7 +93,7 @@ def get_vehicle(vehicle_id: int, db: DbSession) -> Vehicle:
 
 
 @router.patch("/{vehicle_id}", response_model=VehicleResponse)
-def update_vehicle(vehicle_id: int, data: VehicleUpdate, db: DbSession) -> Vehicle:
+def update_vehicle(vehicle_id: int, data: VehicleUpdate, db: DbSession, _admin=Depends(get_current_admin)) -> Vehicle:
     """Update a vehicle."""
     v = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
     if not v:
@@ -109,7 +110,7 @@ def update_vehicle(vehicle_id: int, data: VehicleUpdate, db: DbSession) -> Vehic
 
 
 @router.delete("/{vehicle_id}")
-def delete_vehicle(vehicle_id: int, db: DbSession) -> dict:
+def delete_vehicle(vehicle_id: int, db: DbSession, _admin=Depends(get_current_admin)) -> dict:
     """Delete a vehicle."""
     v = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
     if not v:

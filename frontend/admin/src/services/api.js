@@ -28,7 +28,8 @@ api.interceptors.response.use(
     }
     const url = err.config?.baseURL && err.config?.url ? `${err.config.baseURL.replace(/\/$/, '')}${err.config.url}` : 'unknown'
     if (!err.response) {
-      console.error('[API] No response - request may be blocked (CORS/proxy). URL:', url, err.message)
+      const hint = err.message === 'Network Error' ? ' (connection refused/timed out - is backend running on that host:port?)' : ''
+      console.error('[API] No response' + hint + '. URL:', url, err.message)
     } else {
       console.error('[API] Error', err.response?.status, url, err.response?.data)
     }

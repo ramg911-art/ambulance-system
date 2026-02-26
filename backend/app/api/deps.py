@@ -1,5 +1,5 @@
 """API dependencies - DB session and auth."""
-from typing import Annotated, Generator
+from typing import Annotated, Generator, Union
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -95,3 +95,47 @@ def get_current_admin(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return admin
+
+
+def get_current_admin_or_driver(
+    db: DbSession,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
+) -> Union[AdminUser, Driver]:
+    """Accept either admin or driver JWT. Used by endpoints both roles need (e.g. get trip)."""
+    token = credentials.credentials if credentials else None
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token_type = payload.get("type")
+    sub = payload.get("sub")
+    if not sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if token_type == "admin":
+        admin = db.query(AdminUser).filter(AdminUser.username == sub).first()
+        if not admin or not admin.active:
+            raise HTTPException(status_code=401, detail="Admin not found or inactive")
+        return admin
+    if token_type == "driver":
+        driver = db.query(Driver).filter(Driver.id == int(sub)).first()
+        if not driver or not driver.active:
+            raise HTTPException(status_code=401, detail="Driver not found or inactive")
+        return driver
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
