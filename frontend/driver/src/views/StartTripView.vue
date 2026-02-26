@@ -121,7 +121,7 @@ const manualLat = ref(null)
 const manualLng = ref(null)
 const presetLocations = ref([])
 const selectedPresetLocationFallback = ref('')
-const useManualSelection = ref(false)
+const useManualSelection = ref(true)
 const submitError = ref('')
 const vehiclesError = ref('')
 const loading = ref(false)
@@ -454,20 +454,30 @@ h2 { font-size: 1.25rem; color: #1e293b; }
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  padding: 0.25rem;
+  background: #e2e8f0;
+  border-radius: 0.5rem;
 }
 .mode-toggle button {
   flex: 1;
   padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: white;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
+  color: #64748b;
 }
 .mode-toggle button.active {
   background: #1e3a8a;
   color: white;
-  border-color: #1e3a8a;
 }
-.manual-select-section { margin-bottom: 1rem; }
+.manual-select-section {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
 </style>
