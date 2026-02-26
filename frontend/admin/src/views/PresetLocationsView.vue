@@ -52,8 +52,12 @@
           />
         </div>
         <form @submit.prevent="save">
-          <label>Organization ID</label>
-          <input v-model.number="form.organization_id" type="number" required :disabled="!!editingId" />
+          <label>Organization</label>
+          <select v-model.number="form.organization_id" required :disabled="!!editingId">
+            <option value="">-- Select organization --</option>
+            <option v-for="o in organizations" :key="o.id" :value="o.id">{{ o.name }} (ID: {{ o.id }})</option>
+          </select>
+          <p v-if="!organizations.length && !editingId" class="hint">Create an organization first in the Organizations page.</p>
           <label>Name</label>
           <input v-model="form.name" required />
           <label>Latitude</label>
@@ -79,13 +83,14 @@ import api from '../services/api'
 import GoogleMap from '../components/GoogleMap.vue'
 
 const locations = ref([])
+const organizations = ref([])
 const showModal = ref(false)
 const editingId = ref(null)
 const form = ref({
-  organization_id: 1,
+  organization_id: null,
   name: '',
-  latitude: 0,
-  longitude: 0,
+  latitude: 12.9716,
+  longitude: 77.5946,
   radius_meters: 100,
   active: true,
 })
@@ -109,18 +114,32 @@ function onMapSelect(pos) {
 
 async function load() {
   try {
-    const res = await api.get('/preset-locations')
-    const data = res.data
-    locations.value = Array.isArray(data) ? data : (data?.data || data?.items || [])
+    const [locRes, orgRes] = await Promise.all([
+      api.get('/preset-locations'),
+      api.get('/organizations'),
+    ])
+    const locData = locRes.data
+    locations.value = Array.isArray(locData) ? locData : (locData?.data || locData?.items || [])
+    const orgData = orgRes.data
+    organizations.value = Array.isArray(orgData) ? orgData : (orgData?.data || orgData?.items || [])
   } catch (e) {
-    console.error('Failed to load locations:', e)
+    console.error('Failed to load:', e)
     locations.value = []
+    organizations.value = []
   }
 }
 
 function openCreate() {
   editingId.value = null
-  form.value = { organization_id: 1, name: '', latitude: 12.9716, longitude: 77.5946, radius_meters: 100, active: true }
+  const firstOrgId = organizations.value[0]?.id ?? null
+  form.value = {
+    organization_id: firstOrgId,
+    name: '',
+    latitude: 12.9716,
+    longitude: 77.5946,
+    radius_meters: 100,
+    active: true,
+  }
   showModal.value = true
 }
 
@@ -177,6 +196,7 @@ tr:not(:last-child) td { border-bottom: 1px solid #e2e8f0; }
 .map-hint { font-size: 0.875rem; color: #64748b; margin-bottom: 0.5rem; }
 .modal h3 { margin-bottom: 1rem; }
 .modal label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; }
-.modal input { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; }
+.modal input, .modal select { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; }
+.hint { font-size: 0.875rem; color: #dc2626; margin-top: -0.5rem; margin-bottom: 0.5rem; }
 .modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
 </style>

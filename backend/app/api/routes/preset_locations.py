@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import DbSession, get_current_admin, get_current_driver
-from app.models import PresetLocation
+from app.models import Organization, PresetLocation
 from app.schemas.preset_location import (
     PresetLocationCreate,
     PresetLocationUpdate,
@@ -41,6 +41,12 @@ def list_preset_locations(
 @router.post("", response_model=PresetLocationResponse)
 def create_preset_location(data: PresetLocationCreate, db: DbSession, _admin=Depends(get_current_admin)) -> PresetLocation:
     """Create a preset location."""
+    org = db.query(Organization).filter(Organization.id == data.organization_id).first()
+    if not org:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Organization {data.organization_id} not found. Create an organization first (or run seed_data.py).",
+        )
     loc = PresetLocation(
         organization_id=data.organization_id,
         name=data.name,
