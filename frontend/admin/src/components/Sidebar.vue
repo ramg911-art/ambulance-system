@@ -5,6 +5,7 @@
       <router-link to="/">Dashboard</router-link>
       <router-link to="/live">Live Tracking</router-link>
       <router-link to="/trips">Trips</router-link>
+      <router-link to="/organizations">Organizations</router-link>
       <router-link to="/vehicles">Vehicles</router-link>
       <router-link to="/drivers">Drivers</router-link>
       <router-link to="/preset-locations">Preset Locations</router-link>

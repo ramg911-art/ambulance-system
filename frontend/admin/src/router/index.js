@@ -5,6 +5,7 @@ const routes = [
   { path: '/', name: 'Dashboard', component: () => import('../views/DashboardView.vue'), meta: { requiresAuth: true } },
   { path: '/live', name: 'LiveTracking', component: () => import('../views/LiveTrackingView.vue'), meta: { requiresAuth: true } },
   { path: '/trips', name: 'Trips', component: () => import('../views/TripsView.vue'), meta: { requiresAuth: true } },
+  { path: '/organizations', name: 'Organizations', component: () => import('../views/OrganizationsView.vue'), meta: { requiresAuth: true } },
   { path: '/vehicles', name: 'Vehicles', component: () => import('../views/VehiclesView.vue'), meta: { requiresAuth: true } },
   { path: '/drivers', name: 'Drivers', component: () => import('../views/DriversView.vue'), meta: { requiresAuth: true } },
   { path: '/preset-locations', name: 'PresetLocations', component: () => import('../views/PresetLocationsView.vue'), meta: { requiresAuth: true } },
