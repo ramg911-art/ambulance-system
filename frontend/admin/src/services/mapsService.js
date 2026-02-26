@@ -1,24 +1,20 @@
-import { Loader } from '@googlemaps/js-api-loader'
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 import { GOOGLE_MAPS_API_KEY } from '../config/maps'
 
-let mapInstance = null
-let loaderInstance = null
 let loadPromise = null
 
 /**
- * Load Google Maps API once. Returns the google.maps object.
- * @returns {Promise<typeof google.maps>}
+ * Load Google Maps API once. Returns when google.maps is ready.
+ * @returns {Promise<void>}
  */
 export async function loadMap() {
   if (!GOOGLE_MAPS_API_KEY) {
     throw new Error('Google Maps API key is missing. Set VITE_GOOGLE_MAPS_API_KEY in .env')
   }
   if (loadPromise) return loadPromise
-  loaderInstance = new Loader({
-    apiKey: GOOGLE_MAPS_API_KEY,
-    version: 'weekly',
-  })
-  loadPromise = loaderInstance.load()
+  setOptions({ key: GOOGLE_MAPS_API_KEY })
+  loadPromise = importLibrary('maps')
+  await loadPromise
   return loadPromise
 }
 
