@@ -5,13 +5,26 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver
+from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver, get_current_driver
 from app.models import Organization, Vehicle
 from app.schemas.gps import VehicleLocationResponse
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse
 from app.services.gps_service import GPSService
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
+
+
+@router.get("/for-driver", response_model=list[VehicleResponse])
+def list_vehicles_for_driver(
+    db: DbSession,
+    driver: Driver = Depends(get_current_driver),
+    active_only: bool = Query(True),
+) -> list[Vehicle]:
+    """List vehicles for the current driver's organization. Driver-only endpoint."""
+    q = db.query(Vehicle).filter(Vehicle.organization_id == driver.organization_id)
+    if active_only:
+        q = q.filter(Vehicle.active == True)
+    return q.all()
 
 
 @router.get("", response_model=list[VehicleResponse])

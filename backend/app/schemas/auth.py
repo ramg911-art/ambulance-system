@@ -21,3 +21,9 @@ class TokenResponse(BaseModel):
 
     access_token: str
     token_type: str = "bearer"
+
+
+class DriverLoginResponse(TokenResponse):
+    """Driver login response - includes driver info."""
+
+    driver: dict | None = None
