@@ -5,7 +5,34 @@
       <h1>Start Trip</h1>
     </header>
     <div class="content">
-      <div v-if="!presetLocation" class="status">
+      <div class="mode-toggle">
+        <button
+          type="button"
+          :class="{ active: useManualSelection }"
+          @click="useManualSelection = true"
+        >
+          Select from presets
+        </button>
+        <button
+          type="button"
+          :class="{ active: !useManualSelection }"
+          @click="useManualSelection = false"
+        >
+          Use my location
+        </button>
+      </div>
+      <div v-if="useManualSelection" class="manual-select-section">
+        <div class="form-section">
+          <label>Pickup location</label>
+          <select v-model="selectedPresetLocationFallback" @change="onPresetLocationSelected">
+            <option value="">-- Select preset location --</option>
+            <option v-for="pl in presetLocations" :key="pl.id" :value="pl.id">{{ pl.name }}</option>
+          </select>
+          <p v-if="!presetLocations.length" class="hint">No preset locations. Contact admin.</p>
+        </div>
+        <p v-if="presetLocation && !destinations.length" class="hint">No tariffs for this route. Admin must add tariff in Tariffs page.</p>
+      </div>
+      <div v-else-if="!presetLocation" class="status">
         <p v-if="locationError">{{ locationError }}</p>
         <p v-else-if="!locationRequested">Tap below to enable location (required for pickup detection)</p>
         <p v-else>Detecting pickup location...</p>
@@ -20,11 +47,7 @@
           <button class="location-btn" @click="applyManualCoords">Use coordinates</button>
         </div>
         <div v-if="(locationError || isSecureContextError) && presetLocations.length" class="fallback-preset">
-          <p class="hint">Or select pickup location:</p>
-          <select v-model="selectedPresetLocationFallback" @change="onPresetLocationSelected">
-            <option value="">-- Select preset location --</option>
-            <option v-for="pl in presetLocations" :key="pl.id" :value="pl.id">{{ pl.name }}</option>
-          </select>
+          <p class="hint">Or select preset location above (Select from presets)</p>
         </div>
       </div>
       <div v-else class="preset-detected">
@@ -63,7 +86,7 @@
       <p v-if="submitError" class="error">{{ submitError }}</p>
       <button
         class="start-btn"
-        :disabled="loading || !selectedVehicle || (presetLocation && !selectedDestination)"
+        :disabled="loading || !selectedVehicle || !canStartTrip"
         @click="startTrip"
       >
         {{ loading ? 'Starting...' : 'Start Trip' }}
@@ -98,6 +121,7 @@ const manualLat = ref(null)
 const manualLng = ref(null)
 const presetLocations = ref([])
 const selectedPresetLocationFallback = ref('')
+const useManualSelection = ref(false)
 const submitError = ref('')
 const vehiclesError = ref('')
 const loading = ref(false)
@@ -150,6 +174,17 @@ const pickupPosition = computed(() => {
     return { lat: presetLocation.value.latitude, lng: presetLocation.value.longitude }
   }
   return null
+})
+
+const canStartTrip = computed(() => {
+  if (!selectedVehicle.value) return false
+  if (presetLocation.value) {
+    if (!selectedDestination.value) return false
+    const hasCoords = (presetLocation.value.latitude != null && presetLocation.value.longitude != null) ||
+      (currentLat.value != null && currentLng.value != null)
+    return hasCoords
+  }
+  return currentLat.value != null && currentLng.value != null
 })
 
 const tripMapMarkers = computed(() => {
@@ -415,4 +450,24 @@ h2 { font-size: 1.25rem; color: #1e293b; }
 .map-section { margin-top: 1rem; }
 .map-section h3 { font-size: 0.875rem; color: #475569; margin-bottom: 0.5rem; }
 .map-box { height: 220px; border-radius: 0.5rem; overflow: hidden; }
+.mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.mode-toggle button {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.mode-toggle button.active {
+  background: #1e3a8a;
+  color: white;
+  border-color: #1e3a8a;
+}
+.manual-select-section { margin-bottom: 1rem; }
 </style>

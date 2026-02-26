@@ -32,13 +32,23 @@
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal">
         <h3>{{ editingId ? 'Edit Tariff' : 'Add Tariff' }}</h3>
+        <p class="modal-hint">Set fixed fare from preset location to preset destination.</p>
         <form @submit.prevent="save">
-          <label>Organization ID</label>
-          <input v-model.number="form.organization_id" type="number" required :disabled="!!editingId" />
-          <label>Source (Preset Location ID)</label>
-          <input v-model.number="form.source_id" type="number" required :disabled="!!editingId" />
-          <label>Destination (Preset Destination ID)</label>
-          <input v-model.number="form.destination_id" type="number" required :disabled="!!editingId" />
+          <label>Organization</label>
+          <select v-model.number="form.organization_id" required :disabled="!!editingId">
+            <option value="">-- Select organization --</option>
+            <option v-for="o in organizations" :key="o.id" :value="o.id">{{ o.name }} (ID: {{ o.id }})</option>
+          </select>
+          <label>Source (Preset Location)</label>
+          <select v-model.number="form.source_id" required :disabled="!!editingId">
+            <option value="">-- Select location --</option>
+            <option v-for="l in locationsForOrg" :key="l.id" :value="l.id">{{ l.name }}</option>
+          </select>
+          <label>Destination (Preset Destination)</label>
+          <select v-model.number="form.destination_id" required :disabled="!!editingId">
+            <option value="">-- Select destination --</option>
+            <option v-for="d in destinations" :key="d.id" :value="d.id">{{ d.name }}</option>
+          </select>
           <label>Amount (₹)</label>
           <input v-model.number="form.amount" type="number" step="0.01" required />
           <div class="modal-actions">
@@ -52,10 +62,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import api from '../services/api'
 
 const tariffs = ref([])
+const organizations = ref([])
 const locations = ref([])
 const destinations = ref([])
 const showModal = ref(false)
@@ -86,19 +97,28 @@ function destName(id) {
   return d ? d.name : id
 }
 
+const locationsForOrg = computed(() => {
+  const orgId = form.value?.organization_id
+  if (!orgId) return []
+  return toArray(locations.value).filter((l) => l.organization_id === orgId)
+})
+
 async function load() {
   try {
-    const [tRes, lRes, dRes] = await Promise.all([
+    const [tRes, oRes, lRes, dRes] = await Promise.all([
       api.get('/tariffs'),
+      api.get('/organizations'),
       api.get('/preset-locations'),
       api.get('/preset-destinations'),
     ])
     tariffs.value = toArray(tRes.data)
+    organizations.value = toArray(oRes.data)
     locations.value = toArray(lRes.data)
     destinations.value = toArray(dRes.data)
   } catch (e) {
     console.error('Failed to load tariffs:', e)
     tariffs.value = []
+    organizations.value = []
     locations.value = []
     destinations.value = []
   }
@@ -106,11 +126,27 @@ async function load() {
 
 function openCreate() {
   editingId.value = null
-  form.value = { organization_id: 1, source_id: 1, destination_id: 1, amount: 0 }
-  if (locations.value.length) form.value.source_id = locations.value[0].id
-  if (destinations.value.length) form.value.destination_id = destinations.value[0].id
+  const orgs = toArray(organizations.value)
+  const locs = toArray(locations.value)
+  const dests = toArray(destinations.value)
+  const firstOrgId = orgs[0]?.id ?? null
+  const locsForFirstOrg = firstOrgId ? locs.filter((l) => l.organization_id === firstOrgId) : []
+  form.value = {
+    organization_id: firstOrgId,
+    source_id: locsForFirstOrg[0]?.id ?? null,
+    destination_id: dests[0]?.id ?? null,
+    amount: 0,
+  }
   showModal.value = true
 }
+
+watch(() => form.value?.organization_id, (newOrgId) => {
+  if (!editingId.value && newOrgId) {
+    const locs = toArray(locations.value).filter((l) => l.organization_id === newOrgId)
+    const currentSourceInNewOrg = locs.some((l) => l.id === form.value.source_id)
+    if (!currentSourceInNewOrg) form.value.source_id = locs[0]?.id ?? null
+  }
+})
 
 function openEdit(t) {
   editingId.value = t.id
@@ -158,7 +194,8 @@ tr:not(:last-child) td { border-bottom: 1px solid #e2e8f0; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
 .modal { background: white; padding: 1.5rem; border-radius: 0.5rem; min-width: 320px; }
 .modal h3 { margin-bottom: 1rem; }
+.modal-hint { font-size: 0.875rem; color: #64748b; margin-bottom: 1rem; }
 .modal label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; }
-.modal input { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; }
+.modal input, .modal select { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; }
 .modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
 </style>

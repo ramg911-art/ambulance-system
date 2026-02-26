@@ -83,7 +83,21 @@ def list_fixed_tariffs(
 
 @router.post("", response_model=FixedTariffResponse)
 def create_fixed_tariff(data: FixedTariffCreate, db: DbSession, _admin=Depends(get_current_admin)) -> FixedTariff:
-    """Create a fixed tariff."""
+    """Create a fixed tariff from preset location to preset destination."""
+    from app.models import Organization, PresetLocation, PresetDestination
+
+    org = db.query(Organization).filter(Organization.id == data.organization_id).first()
+    if not org:
+        raise HTTPException(status_code=400, detail=f"Organization {data.organization_id} not found")
+    src = db.query(PresetLocation).filter(
+        PresetLocation.id == data.source_id,
+        PresetLocation.organization_id == data.organization_id,
+    ).first()
+    if not src:
+        raise HTTPException(status_code=400, detail="Preset location not found or does not belong to organization")
+    dest = db.query(PresetDestination).filter(PresetDestination.id == data.destination_id).first()
+    if not dest:
+        raise HTTPException(status_code=400, detail=f"Preset destination {data.destination_id} not found")
     t = FixedTariff(
         organization_id=data.organization_id,
         source_id=data.source_id,
