@@ -2,16 +2,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, get_current_driver
 from app.core.security import create_access_token, verify_password
 from app.models import AdminUser, Driver
-from app.schemas.auth import AdminLoginRequest, LoginRequest, TokenResponse
+from app.schemas.auth import AdminLoginRequest, DriverLoginResponse, LoginRequest, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/login", response_model=TokenResponse)
-def driver_login(data: LoginRequest, db: DbSession) -> TokenResponse:
+@router.post("/login", response_model=DriverLoginResponse)
+def driver_login(data: LoginRequest, db: DbSession) -> DriverLoginResponse:
     """Driver login using phone and password. Returns JWT."""
     driver = db.query(Driver).filter(Driver.phone == data.phone).first()
     if not driver or not driver.active:
@@ -25,7 +25,17 @@ def driver_login(data: LoginRequest, db: DbSession) -> TokenResponse:
             detail="Invalid phone or password",
         )
     token = create_access_token({"sub": str(driver.id), "type": "driver"})
-    return TokenResponse(access_token=token)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "driver": {"id": driver.id, "organization_id": driver.organization_id},
+    }
+
+
+@router.get("/me")
+def driver_me(driver: Driver = Depends(get_current_driver)) -> dict:
+    """Get current driver's profile (id, organization_id). Requires driver token."""
+    return {"id": driver.id, "organization_id": driver.organization_id, "name": driver.name}
 
 
 @router.post("/admin-login", response_model=TokenResponse)

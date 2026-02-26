@@ -11,7 +11,9 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(phone, password) {
     const { data } = await api.post('/auth/login', { phone, password })
     token.value = data.access_token
-    driver.value = { id: parseDriverId(data.access_token) }
+    driver.value = data.driver
+      ? { id: data.driver.id, organization_id: data.driver.organization_id }
+      : { id: parseDriverId(data.access_token) }
     localStorage.setItem('driver_token', data.access_token)
     localStorage.setItem('driver', JSON.stringify(driver.value))
     return data

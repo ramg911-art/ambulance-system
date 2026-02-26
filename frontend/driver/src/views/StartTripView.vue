@@ -82,7 +82,7 @@ const submitError = ref('')
 const vehiclesError = ref('')
 const loading = ref(false)
 
-const ORG_ID = 1
+const orgId = ref(1)
 let watchId = null
 
 function applyManualCoords() {
@@ -119,12 +119,12 @@ async function detectPresetLocation() {
   if (!currentLat.value || !currentLng.value) return
   try {
     const { data } = await api.get('/preset-locations/nearby', {
-      params: { lat: currentLat.value, lng: currentLng.value, organization_id: ORG_ID },
+      params: { lat: currentLat.value, lng: currentLng.value, organization_id: orgId.value },
     })
     presetLocation.value = data
     if (data) {
       const { data: dests } = await api.get(`/preset-destinations/by-source/${data.id}`, {
-        params: { organization_id: ORG_ID },
+        params: { organization_id: orgId.value },
       })
       destinations.value = dests
       selectedDestination.value = dests[0]?.id || ''
@@ -146,7 +146,7 @@ async function fetchFixedTariff() {
   try {
     const { data } = await api.get('/tariffs/fixed', {
       params: {
-        organization_id: ORG_ID,
+        organization_id: orgId.value,
         source_id: presetLocation.value.id,
         destination_id: selectedDestination.value,
       },
@@ -178,23 +178,33 @@ function onLocationError(err) {
 async function loadVehicles() {
   vehiclesError.value = ''
   try {
-    const { data } = await api.get('/vehicles', {
-      params: { organization_id: ORG_ID, active_only: false },
-    })
+    const { data } = await api.get('/vehicles/for-driver', { params: { active_only: false } })
     const list = Array.isArray(data) ? data : (data?.data ?? data?.vehicles ?? [])
     vehicles.value = list
     if (list.length) selectedVehicle.value = list[0].id
   } catch (e) {
     vehicles.value = []
-    const msg = e.response?.data?.detail || e.message || 'Failed to load vehicles'
-    vehiclesError.value = msg + (api.defaults.baseURL ? ` (API: ${api.defaults.baseURL})` : '')
-    console.error('Failed to load vehicles:', api.defaults.baseURL, e)
+    let msg = e.response?.data?.detail || e.message || 'Failed to load vehicles'
+    if (e.response?.status === 401) {
+      msg = 'Session expired. Please log out and log in again.'
+    }
+    vehiclesError.value = msg
+    console.error('Failed to load vehicles:', e)
   }
 }
 
 onMounted(async () => {
   if (!navigator.geolocation) {
     locationError.value = 'Geolocation not supported'
+  }
+  orgId.value = auth.driver?.organization_id ?? 1
+  if (!orgId.value && auth.driver?.id) {
+    try {
+      const { data } = await api.get('/auth/me')
+      orgId.value = data.organization_id ?? 1
+    } catch {
+      orgId.value = 1
+    }
   }
   await loadVehicles()
 })
@@ -213,7 +223,7 @@ async function startTrip() {
   try {
     const isFixed = !!presetLocation.value && !!selectedDestination.value
     const trip = await createTrip({
-      organization_id: ORG_ID,
+      organization_id: orgId.value,
       driver_id: auth.driver.id,
       vehicle_id: parseInt(selectedVehicle.value, 10),
       source_preset_id: presetLocation.value?.id || null,
