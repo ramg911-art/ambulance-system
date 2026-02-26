@@ -52,7 +52,17 @@ npm run build
 # If using serve, restart the admin service too
 ```
 
-### 4. API URL for production (if vehicles/drivers won't save)
+### 4. Cloudflare Tunnel (cfvision.in)
+
+When using Cloudflare Tunnel:
+
+- **API:** https://ambu.cfvision.in (backend on port 9322)
+- **Admin:** https://ambuadmin.cfvision.in (admin on port 5176)
+- **Driver:** https://driver.cfvision.in (driver on port 5175)
+
+The `config.json` in admin and driver `public/` folders is set to `https://ambu.cfvision.in`. Rebuild both frontends after any config change.
+
+### 5. API URL for production (if vehicles/drivers won't save)
 
 If the admin and backend run on different hosts/ports, the admin must know the backend URL.
 
@@ -70,7 +80,7 @@ The admin fetches this on load and uses it for API calls.
 
 **Option C – Reverse proxy:** Configure nginx (or similar) so `/api` on the admin host proxies to the backend. Then the default `/api` base URL works.
 
-### 5. Ensure DB has new tables
+### 6. Ensure DB has new tables
 
 The `distance_tariff_config` table is created automatically on first backend startup after the model is added. If it’s missing:
 

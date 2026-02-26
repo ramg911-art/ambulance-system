@@ -2,10 +2,10 @@ tunnel: YOUR_TUNNEL_ID
 credentials-file: /opt/cloudflare/credentials.json
 
 ingress:
-  - hostname: api.yourdomain.com
+  - hostname: ambu.cfvision.in
     service: http://localhost:9322
-  - hostname: driver.yourdomain.com
+  - hostname: driver.cfvision.in
     service: http://localhost:5175
-  - hostname: admin.yourdomain.com
+  - hostname: ambuadmin.cfvision.in
     service: http://localhost:5176
   - service: http_status:404
