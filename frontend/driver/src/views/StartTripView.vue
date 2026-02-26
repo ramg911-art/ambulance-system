@@ -7,8 +7,12 @@
     <div class="content">
       <div v-if="!presetLocation" class="status">
         <p v-if="locationError">{{ locationError }}</p>
+        <p v-else-if="!locationRequested">Tap below to enable location (required for pickup detection)</p>
         <p v-else>Detecting pickup location...</p>
         <p class="coords" v-if="currentLat">📍 {{ currentLat.toFixed(5) }}, {{ currentLng.toFixed(5) }}</p>
+        <button v-if="!currentLat" class="location-btn" @click="requestLocation">
+          {{ locationError ? 'Retry location' : 'Allow location access' }}
+        </button>
       </div>
       <div v-else class="preset-detected">
         <p class="label">Pickup location detected</p>
@@ -29,6 +33,8 @@
           <option value="">-- Select vehicle --</option>
           <option v-for="v in vehicles" :key="v.id" :value="v.id">{{ v.registration_number }}</option>
         </select>
+        <p v-if="vehiclesError" class="error">{{ vehiclesError }}</p>
+        <p v-else-if="!vehicles.length" class="hint">No vehicles found. Ensure driver config.json has correct apiUrl.</p>
       </div>
       <p v-if="submitError" class="error">{{ submitError }}</p>
       <button
@@ -61,11 +67,36 @@ const fixedAmount = ref(null)
 const currentLat = ref(null)
 const currentLng = ref(null)
 const locationError = ref('')
+const locationRequested = ref(false)
 const submitError = ref('')
+const vehiclesError = ref('')
 const loading = ref(false)
 
 const ORG_ID = 1
 let watchId = null
+
+function requestLocation() {
+  if (!navigator.geolocation) {
+    locationError.value = 'Geolocation not supported'
+    return
+  }
+  locationRequested.value = true
+  locationError.value = ''
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      currentLat.value = pos.coords.latitude
+      currentLng.value = pos.coords.longitude
+      if (!watchId) {
+        watchId = navigator.geolocation.watchPosition(onLocation, onLocationError, {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+        })
+      }
+    },
+    onLocationError,
+    { enableHighAccuracy: true }
+  )
+}
 
 async function detectPresetLocation() {
   if (!currentLat.value || !currentLng.value) return
@@ -124,18 +155,18 @@ function onLocationError(err) {
 onMounted(async () => {
   if (!navigator.geolocation) {
     locationError.value = 'Geolocation not supported'
-    return
   }
-  watchId = navigator.geolocation.watchPosition(onLocation, onLocationError, {
-    enableHighAccuracy: true,
-    maximumAge: 5000,
-  })
   try {
-    const { data } = await api.get('/vehicles', { params: { organization_id: ORG_ID } })
-    vehicles.value = data
-    if (data.length) selectedVehicle.value = data[0].id
-  } catch {
+    const { data } = await api.get('/vehicles', {
+      params: { organization_id: ORG_ID, active_only: false },
+    })
+    const list = Array.isArray(data) ? data : (data?.data ?? data?.vehicles ?? [])
+    vehicles.value = list
+    if (list.length) selectedVehicle.value = list[0].id
+  } catch (e) {
     vehicles.value = []
+    vehiclesError.value = e.response?.data?.detail || e.message || 'Failed to load vehicles'
+    console.error('Failed to load vehicles:', e)
   }
 })
 
@@ -234,4 +265,16 @@ h2 { font-size: 1.25rem; color: #1e293b; }
 }
 .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .error { color: #dc2626; font-size: 0.875rem; margin-bottom: 0.5rem; }
+.hint { color: #64748b; font-size: 0.875rem; margin-top: 0.25rem; }
+.location-btn {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.location-btn:active { opacity: 0.9; }
 </style>
