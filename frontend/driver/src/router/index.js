@@ -6,6 +6,7 @@ const routes = [
   { path: '/', name: 'Dashboard', component: () => import('../views/DashboardView.vue'), meta: { requiresAuth: true } },
   { path: '/start', name: 'StartTrip', component: () => import('../views/StartTripView.vue'), meta: { requiresAuth: true } },
   { path: '/trip/:id', name: 'ActiveTrip', component: () => import('../views/ActiveTripView.vue'), meta: { requiresAuth: true } },
+  { path: '/trips/today', name: 'TodayTrips', component: () => import('../views/TodayTripsView.vue'), meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })

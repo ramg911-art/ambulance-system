@@ -1,15 +1,50 @@
 """Trip routes."""
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_, func
 
-from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver
+from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver, get_current_driver
 from app.models import Driver, Trip
 from app.schemas.trip import TripCreate, TripResponse
 from app.services.trip_service import create_trip, start_trip, end_trip
 
 router = APIRouter(prefix="/trips", tags=["trips"])
+
+
+@router.get("/driver/today", response_model=list[TripResponse])
+def list_driver_trips_today(
+    db: DbSession,
+    driver: Driver = Depends(get_current_driver),
+) -> list[Trip]:
+    """List current driver's trips for today (completed or in progress)."""
+    today = date.today()
+    q = (
+        db.query(Trip)
+        .options(
+            joinedload(Trip.source_preset),
+            joinedload(Trip.destination_preset),
+        )
+        .filter(Trip.driver_id == driver.id)
+        .filter(
+            or_(
+                func.date(Trip.start_time) == today,
+                func.date(Trip.end_time) == today,
+                func.date(Trip.created_at) == today,
+            )
+        )
+    )
+    trips = q.order_by(Trip.created_at.desc()).all()
+    return [
+        TripResponse(
+            **{k: getattr(t, k) for k in ("id", "organization_id", "driver_id", "vehicle_id", "source_preset_id", "destination_preset_id", "pickup_lat", "pickup_lng", "drop_lat", "drop_lng", "start_time", "end_time", "distance_km", "is_fixed_tariff", "total_amount", "status")},
+            pickup_location_name=t.source_preset.name if t.source_preset else ("GPS pickup" if (t.pickup_lat and t.pickup_lng) else None),
+            destination_name=t.destination_preset.name if t.destination_preset else ("GPS destination" if (t.drop_lat and t.drop_lng) else None),
+        )
+        for t in trips
+    ]
 
 
 @router.get("", response_model=list[TripResponse])
@@ -82,4 +117,19 @@ def end_trip_endpoint(trip_id: int, db: DbSession) -> Trip:
     trip = end_trip(db, trip_id)
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found or not in progress")
-    return trip
+    trip = (
+        db.query(Trip)
+        .options(
+            joinedload(Trip.source_preset),
+            joinedload(Trip.destination_preset),
+        )
+        .filter(Trip.id == trip_id)
+        .first()
+    )
+    pickup_name = trip.source_preset.name if trip.source_preset else ("GPS pickup" if (trip.pickup_lat and trip.pickup_lng) else None)
+    dest_name = trip.destination_preset.name if trip.destination_preset else ("GPS destination" if (trip.drop_lat and trip.drop_lng) else None)
+    return TripResponse(
+        **{k: getattr(trip, k) for k in ("id", "organization_id", "driver_id", "vehicle_id", "source_preset_id", "destination_preset_id", "pickup_lat", "pickup_lng", "drop_lat", "drop_lng", "start_time", "end_time", "distance_km", "is_fixed_tariff", "total_amount", "status")},
+        pickup_location_name=pickup_name,
+        destination_name=dest_name,
+    )

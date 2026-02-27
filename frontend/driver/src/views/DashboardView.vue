@@ -24,6 +24,11 @@
         <h2>Start New Trip</h2>
         <p>Begin a new ambulance trip</p>
       </div>
+      <div class="card" @click="$router.push('/trips/today')">
+        <span class="icon">📋</span>
+        <h2>Today's Trips</h2>
+        <p>View today's completed trips</p>
+      </div>
     </div>
   </div>
 </template>

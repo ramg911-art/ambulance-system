@@ -19,3 +19,8 @@ export async function getTrip(tripId) {
   const { data } = await api.get(`/trips/${tripId}`)
   return data
 }
+
+export async function getDriverTripsToday() {
+  const { data } = await api.get('/trips/driver/today')
+  return data
+}
