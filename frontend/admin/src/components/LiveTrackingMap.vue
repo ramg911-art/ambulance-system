@@ -63,20 +63,12 @@ function syncMarkers() {
     const existing = markersByVehicle.value[vid]
     if (existing) {
       updateMarker(existing, pos)
-      existing.setLabel({ text: labelText, color: 'white', fontWeight: 'bold', fontSize: '12px' })
+      existing.setLabel({ text: labelText, color: '#fff', fontWeight: 'bold', fontSize: '11px' })
     } else {
       const marker = createMarker(mapRef.value, pos, {
         title: `Vehicle ${label}`,
         draggable: false,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 18,
-          fillColor: '#dc2626',
-          fillOpacity: 1,
-          strokeColor: 'white',
-          strokeWeight: 2,
-        },
-        label: { text: labelText, color: 'white', fontWeight: 'bold', fontSize: '12px' },
+        label: { text: labelText, color: '#fff', fontWeight: 'bold', fontSize: '11px' },
       })
       if (marker) markersByVehicle.value[vid] = marker
     }
@@ -98,13 +90,11 @@ onUnmounted(() => {
 <style scoped>
 .live-tracking-map {
   width: 100%;
-  height: 100%;
-  min-height: 400px;
+  height: 450px;
 }
 .map-container {
   width: 100%;
-  height: 100%;
-  min-height: 400px;
+  height: 450px;
 }
 .map-error {
   min-height: 200px;

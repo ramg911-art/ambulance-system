@@ -26,3 +26,4 @@ class VehicleLocationResponse(BaseModel):
     destination_name: str | None = None
     destination_lat: float | None = None
     destination_lng: float | None = None
+    current_location_name: str | None = None

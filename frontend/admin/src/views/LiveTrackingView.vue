@@ -25,7 +25,8 @@
           </p>
         </div>
         <p v-else class="vehicle-pos">
-          <strong>Current:</strong> {{ loc.latitude.toFixed(4) }}, {{ loc.longitude.toFixed(4) }}
+          <strong>Current:</strong>
+          <span v-if="loc.current_location_name">{{ loc.current_location_name }} (</span>{{ loc.latitude.toFixed(4) }}, {{ loc.longitude.toFixed(4) }}<span v-if="loc.current_location_name">)</span>
         </p>
       </div>
     </div>

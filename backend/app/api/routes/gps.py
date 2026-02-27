@@ -6,6 +6,7 @@ from app.api.deps import DbSession, get_current_admin
 from app.models import Vehicle, Trip
 from app.schemas.gps import GPSUpdateRequest, VehicleLocationResponse
 from app.services.gps_service import GPSService
+from app.services.preset_location_service import detect_preset_location
 
 router = APIRouter(prefix="/gps", tags=["gps"])
 
@@ -40,6 +41,12 @@ def get_live_vehicles(db: DbSession, _admin=Depends(get_current_admin)) -> list[
         vehicle_id = loc["vehicle_id"]
         vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
         reg_no = vehicle.registration_number if vehicle else str(vehicle_id)
+        org_id = vehicle.organization_id if vehicle else None
+        current_location_name = None
+        if org_id:
+            preset = detect_preset_location(db, org_id, loc["latitude"], loc["longitude"])
+            if preset:
+                current_location_name = preset.name
 
         pickup_name = None
         pickup_lat = None
@@ -90,6 +97,7 @@ def get_live_vehicles(db: DbSession, _admin=Depends(get_current_admin)) -> list[
                 destination_name=dest_name,
                 destination_lat=dest_lat,
                 destination_lng=dest_lng,
+                current_location_name=current_location_name,
             )
         )
     return result
