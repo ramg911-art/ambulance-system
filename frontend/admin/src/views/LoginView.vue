@@ -45,6 +45,7 @@ async function handleLogin() {
   try {
     const { data } = await api.post('/auth/admin-login', { username: username.value, password: password.value })
     localStorage.setItem('admin_token', data.access_token)
+    if (data.username) localStorage.setItem('admin_username', data.username)
     router.push('/')
   } catch (e) {
     error.value = e.response?.data?.detail || 'Login failed'

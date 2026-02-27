@@ -85,7 +85,7 @@ async function fetchLocations() {
 
 onMounted(() => {
   fetchLocations()
-  setInterval(fetchLocations, 5000)
+  setInterval(fetchLocations, 2 * 60 * 1000)
 })
 </script>
 

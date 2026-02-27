@@ -28,7 +28,7 @@ def driver_login(data: LoginRequest, db: DbSession) -> DriverLoginResponse:
     return {
         "access_token": token,
         "token_type": "bearer",
-        "driver": {"id": driver.id, "organization_id": driver.organization_id},
+        "driver": {"id": driver.id, "organization_id": driver.organization_id, "name": driver.name},
     }
 
 
@@ -38,8 +38,8 @@ def driver_me(driver: Driver = Depends(get_current_driver)) -> dict:
     return {"id": driver.id, "organization_id": driver.organization_id, "name": driver.name}
 
 
-@router.post("/admin-login", response_model=TokenResponse)
-def admin_login(data: AdminLoginRequest, db: DbSession) -> TokenResponse:
+@router.post("/admin-login")
+def admin_login(data: AdminLoginRequest, db: DbSession) -> dict:
     """Admin login using username and password. Returns JWT."""
     admin = db.query(AdminUser).filter(AdminUser.username == data.username).first()
     if not admin or not admin.active:
@@ -53,4 +53,4 @@ def admin_login(data: AdminLoginRequest, db: DbSession) -> TokenResponse:
             detail="Invalid username or password",
         )
     token = create_access_token({"sub": admin.username, "type": "admin"})
-    return TokenResponse(access_token=token)
+    return {"access_token": token, "token_type": "bearer", "username": admin.username}

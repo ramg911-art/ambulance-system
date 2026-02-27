@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <!-- Ambulance body - red -->
+  <rect x="2" y="8" width="32" height="20" rx="3" fill="#dc2626"/>
+  <!-- Cab front -->
+  <path d="M34 14 L36 20 L34 28 L32 28 L32 14 Z" fill="#b91c1c"/>
+  <!-- Medical cross - white plus -->
+  <rect x="12" y="16" width="12" height="2" fill="white"/>
+  <rect x="16" y="10" width="2" height="14" fill="white"/>
+</svg>

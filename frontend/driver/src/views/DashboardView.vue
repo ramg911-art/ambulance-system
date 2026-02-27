@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard">
     <header class="header">
-      <h1>Driver Dashboard</h1>
+      <h1>Hello {{ driverName }}</h1>
       <button @click="logout" class="logout">Logout</button>
     </header>
     <div class="content">
@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 import { reverseGeocode } from '../services/mapsService'
@@ -37,6 +37,8 @@ import GoogleMap from '../components/GoogleMap.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
+
+const driverName = computed(() => auth.driver?.name || 'Driver')
 
 const currentPosition = ref(null)
 const locationName = ref('')

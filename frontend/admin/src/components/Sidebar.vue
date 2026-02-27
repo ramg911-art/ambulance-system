@@ -1,6 +1,7 @@
 <template>
   <aside class="sidebar">
     <h1 class="logo">Ambulance Admin</h1>
+    <p class="greeting" v-if="adminUsername">Hello {{ adminUsername }}</p>
     <nav class="nav">
       <router-link to="/">Dashboard</router-link>
       <router-link to="/live">Live Tracking</router-link>
@@ -19,12 +20,19 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const adminUsername = ref('')
+
+onMounted(() => {
+  adminUsername.value = localStorage.getItem('admin_username') || ''
+})
 
 function logout() {
   localStorage.removeItem('admin_token')
+  localStorage.removeItem('admin_username')
   router.push('/login')
 }
 </script>
@@ -40,6 +48,12 @@ function logout() {
 }
 .logo {
   font-size: 1.125rem;
+  padding: 0 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.greeting {
+  font-size: 0.875rem;
+  color: #94a3b8;
   padding: 0 1.5rem;
   margin-bottom: 1.5rem;
 }

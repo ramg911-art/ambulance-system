@@ -16,6 +16,7 @@ class VehicleLocationResponse(BaseModel):
 
     vehicle_id: int
     registration_number: str
+    driver_name: str | None = None
     latitude: float
     longitude: float
     last_updated: str

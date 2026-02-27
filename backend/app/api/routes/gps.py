@@ -45,6 +45,7 @@ def get_live_vehicles(db: DbSession, _admin=Depends(get_current_admin)) -> list[
         pickup_lng = None
         dest_lat = None
         dest_lng = None
+        driver_name = None
         trip_id = loc.get("trip_id")
         if trip_id:
             trip = (
@@ -52,11 +53,13 @@ def get_live_vehicles(db: DbSession, _admin=Depends(get_current_admin)) -> list[
                 .options(
                     joinedload(Trip.source_preset),
                     joinedload(Trip.destination_preset),
+                    joinedload(Trip.driver),
                 )
                 .filter(Trip.id == trip_id)
                 .first()
             )
             if trip:
+                driver_name = trip.driver.name if trip.driver else None
                 if trip.source_preset:
                     pickup_lat = trip.source_preset.latitude
                     pickup_lng = trip.source_preset.longitude
@@ -74,6 +77,7 @@ def get_live_vehicles(db: DbSession, _admin=Depends(get_current_admin)) -> list[
             VehicleLocationResponse(
                 vehicle_id=vehicle_id,
                 registration_number=reg_no,
+                driver_name=driver_name,
                 latitude=loc["latitude"],
                 longitude=loc["longitude"],
                 last_updated=loc["last_updated"],

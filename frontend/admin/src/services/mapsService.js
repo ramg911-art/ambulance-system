@@ -61,6 +61,26 @@ export function centerMap(map, position, zoom) {
   if (zoom != null) map.setZoom(zoom)
 }
 
+/**
+ * Fit map bounds to include all positions, with padding.
+ * @param {google.maps.Map} map
+ * @param {Array<{lat: number, lng: number}>} positions
+ * @param {number} [padding] Padding in pixels
+ */
+export function fitMapToBounds(map, positions, padding = 50) {
+  if (!map || !positions?.length) return
+  const valid = positions.filter((p) => p?.lat != null && p?.lng != null)
+  if (valid.length === 0) return
+  if (valid.length === 1) {
+    map.setCenter({ lat: valid[0].lat, lng: valid[0].lng })
+    map.setZoom(14)
+  } else {
+    const bounds = new window.google.maps.LatLngBounds()
+    valid.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }))
+    map.fitBounds(bounds, padding)
+  }
+}
+
 const geocodeCache = new Map()
 const CACHE_KEY_PRECISION = 4
 const CACHE_TTL_MS = 5 * 60 * 1000
