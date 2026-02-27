@@ -2,7 +2,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver
 from app.models import Driver, Trip
@@ -45,12 +45,26 @@ def get_trip(
     user=Depends(get_current_admin_or_driver),
 ) -> Trip:
     """Get trip by ID. Admin can get any trip; driver can get only their own."""
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    trip = (
+        db.query(Trip)
+        .options(
+            joinedload(Trip.source_preset),
+            joinedload(Trip.destination_preset),
+        )
+        .filter(Trip.id == trip_id)
+        .first()
+    )
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
     if isinstance(user, Driver) and trip.driver_id != user.id:
         raise HTTPException(status_code=403, detail="Not authorized to view this trip")
-    return trip
+    pickup_name = trip.source_preset.name if trip.source_preset else ("GPS pickup" if (trip.pickup_lat is not None and trip.pickup_lng is not None) else None)
+    dest_name = trip.destination_preset.name if trip.destination_preset else ("GPS destination" if (trip.drop_lat is not None and trip.drop_lng is not None) else None)
+    return TripResponse(
+        **{k: getattr(trip, k) for k in ("id", "organization_id", "driver_id", "vehicle_id", "source_preset_id", "destination_preset_id", "pickup_lat", "pickup_lng", "drop_lat", "drop_lng", "start_time", "end_time", "distance_km", "is_fixed_tariff", "total_amount", "status")},
+        pickup_location_name=pickup_name,
+        destination_name=dest_name,
+    )
 
 
 @router.post("/{trip_id}/start", response_model=TripResponse)

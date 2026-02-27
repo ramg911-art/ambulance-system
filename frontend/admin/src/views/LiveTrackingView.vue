@@ -8,7 +8,9 @@
       <div v-for="loc in locations" :key="loc.vehicle_id" class="vehicle">
         <div class="vehicle-header">
           <span class="vehicle-num">Vehicle {{ loc.registration_number || '#' + loc.vehicle_id }}</span>
-          <span class="coords">{{ loc.latitude.toFixed(4) }}, {{ loc.longitude.toFixed(4) }}</span>
+          <span class="coords">
+            <span v-if="loc.current_location_name">{{ loc.current_location_name }} (</span>{{ loc.latitude.toFixed(4) }}, {{ loc.longitude.toFixed(4) }}<span v-if="loc.current_location_name">)</span>
+          </span>
         </div>
         <div v-if="loc.pickup_location_name || loc.destination_name" class="trip-details">
           <p v-if="loc.pickup_location_name" class="location-row">

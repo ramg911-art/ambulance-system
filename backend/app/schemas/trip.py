@@ -39,6 +39,8 @@ class TripResponse(BaseModel):
     is_fixed_tariff: bool
     total_amount: Optional[float] = None
     status: str
+    pickup_location_name: Optional[str] = None
+    destination_name: Optional[str] = None
 
     class Config:
         from_attributes = True
