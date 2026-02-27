@@ -12,9 +12,17 @@ class GPSUpdateRequest(BaseModel):
 
 
 class VehicleLocationResponse(BaseModel):
-    """Live vehicle location response."""
+    """Live vehicle location response with vehicle info and trip presets."""
 
     vehicle_id: int
+    registration_number: str
     latitude: float
     longitude: float
     last_updated: str
+    trip_id: int | None = None
+    pickup_location_name: str | None = None
+    pickup_lat: float | None = None
+    pickup_lng: float | None = None
+    destination_name: str | None = None
+    destination_lat: float | None = None
+    destination_lng: float | None = None

@@ -32,6 +32,8 @@ export function createMarker(map, position, options = {}) {
     position: { lat: position.lat, lng: position.lng },
     title: options.title || '',
     draggable: options.draggable ?? false,
+    icon: options.icon ?? undefined,
+    label: options.label ?? undefined,
   })
   return marker
 }

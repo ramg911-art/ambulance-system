@@ -58,13 +58,25 @@ function syncMarkers() {
     const lng = loc.longitude ?? loc.lng
     if (lat == null || lng == null) continue
     const pos = { lat, lng }
+    const label = loc.registration_number || `#${vid}`
+    const labelText = String(label).slice(0, 8)
     const existing = markersByVehicle.value[vid]
     if (existing) {
       updateMarker(existing, pos)
+      existing.setLabel({ text: labelText, color: 'white', fontWeight: 'bold', fontSize: '12px' })
     } else {
       const marker = createMarker(mapRef.value, pos, {
-        title: `Vehicle #${vid}`,
+        title: `Vehicle ${label}`,
         draggable: false,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 18,
+          fillColor: '#dc2626',
+          fillOpacity: 1,
+          strokeColor: 'white',
+          strokeWeight: 2,
+        },
+        label: { text: labelText, color: 'white', fontWeight: 'bold', fontSize: '12px' },
       })
       if (marker) markersByVehicle.value[vid] = marker
     }

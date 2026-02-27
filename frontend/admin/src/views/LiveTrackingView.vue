@@ -6,8 +6,27 @@
     </div>
     <div v-if="locations.length > 0" class="vehicle-list">
       <div v-for="loc in locations" :key="loc.vehicle_id" class="vehicle">
-        <span>Vehicle #{{ loc.vehicle_id }}</span>
-        <span class="coords">{{ loc.latitude.toFixed(4) }}, {{ loc.longitude.toFixed(4) }}</span>
+        <div class="vehicle-header">
+          <span class="vehicle-num">Vehicle {{ loc.registration_number || '#' + loc.vehicle_id }}</span>
+          <span class="coords">{{ loc.latitude.toFixed(4) }}, {{ loc.longitude.toFixed(4) }}</span>
+        </div>
+        <div v-if="loc.pickup_location_name || loc.destination_name" class="trip-details">
+          <p v-if="loc.pickup_location_name" class="location-row">
+            <strong>Pickup:</strong> {{ loc.pickup_location_name }}
+            <span v-if="loc.pickup_lat != null" class="coords"
+              >({{ loc.pickup_lat.toFixed(4) }}, {{ loc.pickup_lng.toFixed(4) }})</span
+            >
+          </p>
+          <p v-if="loc.destination_name" class="location-row">
+            <strong>Destination:</strong> {{ loc.destination_name }}
+            <span v-if="loc.destination_lat != null" class="coords"
+              >({{ loc.destination_lat.toFixed(4) }}, {{ loc.destination_lng.toFixed(4) }})</span
+            >
+          </p>
+        </div>
+        <p v-else class="vehicle-pos">
+          <strong>Current:</strong> {{ loc.latitude.toFixed(4) }}, {{ loc.longitude.toFixed(4) }}
+        </p>
       </div>
     </div>
     <div v-else class="empty">No vehicles online</div>
@@ -45,13 +64,21 @@ h1 { margin-bottom: 1rem; color: #1e293b; }
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .empty { color: #64748b; text-align: center; padding: 2rem; }
-.vehicle-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.vehicle-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .vehicle {
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+}
+.vehicle-header {
   display: flex;
   justify-content: space-between;
-  padding: 0.75rem;
-  background: #f8fafc;
-  border-radius: 0.375rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
+.vehicle-num { font-weight: 600; color: #1e293b; }
 .coords { font-size: 0.875rem; color: #64748b; }
+.trip-details { font-size: 0.9rem; }
+.location-row { margin: 0.25rem 0; }
+.vehicle-pos { margin: 0; font-size: 0.9rem; }
 </style>

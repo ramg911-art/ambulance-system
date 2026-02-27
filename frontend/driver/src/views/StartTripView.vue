@@ -30,6 +30,11 @@
           </select>
           <p v-if="!presetLocations.length" class="hint">No preset locations. Contact admin.</p>
         </div>
+        <div v-if="presetLocation" class="pickup-summary">
+          <p class="label">Pickup location</p>
+          <p class="pickup-name">{{ presetLocation.name }}</p>
+          <p class="coords">{{ presetLocation.latitude.toFixed(4) }}, {{ presetLocation.longitude.toFixed(4) }}</p>
+        </div>
         <p v-if="presetLocation && !destinations.length" class="hint">No tariffs for this route. Admin must add tariff in Tariffs page.</p>
       </div>
       <div v-else-if="!presetLocation" class="status">
@@ -52,7 +57,8 @@
       </div>
       <div v-else class="preset-detected">
         <p class="label">Pickup location detected</p>
-        <h2>{{ presetLocation.name }}</h2>
+        <p class="pickup-name">{{ presetLocation.name }}</p>
+        <p class="coords">{{ presetLocation.latitude.toFixed(4) }}, {{ presetLocation.longitude.toFixed(4) }}</p>
       </div>
       <div v-if="presetLocation" class="form-section">
         <label>Destination</label>
@@ -375,7 +381,8 @@ h1 { font-size: 1.25rem; }
   text-align: center;
 }
 .label { color: #64748b; font-size: 0.9rem; margin-bottom: 0.25rem; }
-h2 { font-size: 1.25rem; color: #1e293b; }
+.pickup-summary { margin-top: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 0.375rem; }
+.pickup-name { font-weight: 600; color: #1e293b; font-size: 1rem; margin: 0.25rem 0; }
 .coords { font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; }
 .form-section {
   margin-bottom: 1rem;
