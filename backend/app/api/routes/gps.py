@@ -6,7 +6,6 @@ from app.api.deps import DbSession, get_current_admin
 from app.models import Vehicle, Trip
 from app.schemas.gps import GPSUpdateRequest, VehicleLocationResponse
 from app.services.gps_service import GPSService
-from app.services.preset_location_service import detect_preset_location
 
 router = APIRouter(prefix="/gps", tags=["gps"])
 
@@ -41,17 +40,9 @@ def get_live_vehicles(db: DbSession, _admin=Depends(get_current_admin)) -> list[
         vehicle_id = loc["vehicle_id"]
         vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
         reg_no = vehicle.registration_number if vehicle else str(vehicle_id)
-        org_id = vehicle.organization_id if vehicle else None
-        current_location_name = None
-        if org_id:
-            preset = detect_preset_location(db, org_id, loc["latitude"], loc["longitude"])
-            if preset:
-                current_location_name = preset.name
 
-        pickup_name = None
         pickup_lat = None
         pickup_lng = None
-        dest_name = None
         dest_lat = None
         dest_lng = None
         trip_id = loc.get("trip_id")
@@ -67,19 +58,15 @@ def get_live_vehicles(db: DbSession, _admin=Depends(get_current_admin)) -> list[
             )
             if trip:
                 if trip.source_preset:
-                    pickup_name = trip.source_preset.name
                     pickup_lat = trip.source_preset.latitude
                     pickup_lng = trip.source_preset.longitude
                 elif trip.pickup_lat is not None and trip.pickup_lng is not None:
-                    pickup_name = "GPS pickup"
                     pickup_lat = trip.pickup_lat
                     pickup_lng = trip.pickup_lng
                 if trip.destination_preset:
-                    dest_name = trip.destination_preset.name
                     dest_lat = trip.destination_preset.latitude
                     dest_lng = trip.destination_preset.longitude
                 elif trip.drop_lat is not None and trip.drop_lng is not None:
-                    dest_name = "GPS destination"
                     dest_lat = trip.drop_lat
                     dest_lng = trip.drop_lng
 
@@ -91,13 +78,13 @@ def get_live_vehicles(db: DbSession, _admin=Depends(get_current_admin)) -> list[
                 longitude=loc["longitude"],
                 last_updated=loc["last_updated"],
                 trip_id=trip_id,
-                pickup_location_name=pickup_name,
+                pickup_location_name=None,
                 pickup_lat=pickup_lat,
                 pickup_lng=pickup_lng,
-                destination_name=dest_name,
+                destination_name=None,
                 destination_lat=dest_lat,
                 destination_lng=dest_lng,
-                current_location_name=current_location_name,
+                current_location_name=None,
             )
         )
     return result

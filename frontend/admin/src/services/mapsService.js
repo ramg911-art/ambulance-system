@@ -60,3 +60,49 @@ export function centerMap(map, position, zoom) {
   map.panTo({ lat: position.lat, lng: position.lng })
   if (zoom != null) map.setZoom(zoom)
 }
+
+const geocodeCache = new Map()
+const CACHE_KEY_PRECISION = 4
+const CACHE_TTL_MS = 5 * 60 * 1000
+
+function cacheKey(lat, lng) {
+  const r = 10 ** CACHE_KEY_PRECISION
+  return `${Math.round(lat * r) / r},${Math.round(lng * r) / r}`
+}
+
+/**
+ * Reverse geocode lat/lng to address using Google Maps Geocoding API.
+ * @param {number} lat
+ * @param {number} lng
+ * @returns {Promise<string|null>} Formatted address or null
+ */
+export async function reverseGeocode(lat, lng) {
+  if (lat == null || lng == null) return null
+  const key = cacheKey(lat, lng)
+  const cached = geocodeCache.get(key)
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.address
+
+  try {
+    await loadMap()
+    let Geocoder = window.google?.maps?.Geocoder
+    if (!Geocoder && window.google?.maps?.importLibrary) {
+      const lib = await window.google.maps.importLibrary('geocoding')
+      Geocoder = lib?.Geocoder
+    }
+    if (!Geocoder) return null
+    return new Promise((resolve) => {
+      const geocoder = new Geocoder()
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === 'OK' && results?.[0]) {
+          const address = results[0].formatted_address
+          geocodeCache.set(key, { address, ts: Date.now() })
+          resolve(address)
+        } else {
+          resolve(null)
+        }
+      })
+    })
+  } catch {
+    return null
+  }
+}

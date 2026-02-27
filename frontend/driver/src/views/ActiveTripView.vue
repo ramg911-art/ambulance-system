@@ -6,17 +6,17 @@
     </header>
     <div class="content">
       <div class="trip-info" v-if="trip">
-        <p v-if="trip.pickup_location_name || trip.pickup_lat != null" class="location-row">
+        <p v-if="trip.pickup_lat != null" class="location-row">
           <strong>Pickup:</strong>
-          <span v-if="trip.pickup_location_name">{{ trip.pickup_location_name }} (</span>{{ formatCoords(trip.pickup_lat, trip.pickup_lng) }}<span v-if="trip.pickup_location_name">)</span>
+          <span v-if="geoPickup">{{ geoPickup }} (</span>{{ formatCoords(trip.pickup_lat, trip.pickup_lng) }}<span v-if="geoPickup">)</span>
         </p>
-        <p v-if="trip.destination_name || trip.drop_lat != null" class="location-row">
+        <p v-if="trip.drop_lat != null" class="location-row">
           <strong>Destination:</strong>
-          <span v-if="trip.destination_name">{{ trip.destination_name }} (</span>{{ formatCoords(trip.drop_lat, trip.drop_lng) }}<span v-if="trip.destination_name">)</span>
+          <span v-if="geoDest">{{ geoDest }} (</span>{{ formatCoords(trip.drop_lat, trip.drop_lng) }}<span v-if="geoDest">)</span>
         </p>
         <p class="location-row tracking-row">
           <strong>Tracking:</strong>
-          <span v-if="trackingLocationName">{{ trackingLocationName }} (</span>{{ currentLat != null ? `${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}` : '—' }}<span v-if="trackingLocationName">)</span>
+          <span v-if="geoTracking">{{ geoTracking }} (</span>{{ currentLat != null ? `${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}` : '—' }}<span v-if="geoTracking">)</span>
         </p>
       </div>
       <button class="end-btn" @click="endTrip" :disabled="ending">
@@ -28,22 +28,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
 import { endTrip as apiEndTrip } from '../services/tripService'
 import { updateLocation } from '../services/gpsService'
+import { reverseGeocode } from '../services/mapsService'
 import api from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
-const auth = useAuthStore()
 const tripId = route.params.id
 
 const trip = ref(null)
 const currentLat = ref(null)
 const currentLng = ref(null)
-const trackingLocationName = ref('')
+const geoPickup = ref('')
+const geoDest = ref('')
+const geoTracking = ref('')
 const ending = ref(false)
 const error = ref('')
 
@@ -55,22 +56,29 @@ function formatCoords(lat, lng) {
   return '—'
 }
 
-async function fetchTrackingLocationName(lat, lng) {
-  const orgId = trip.value?.organization_id ?? auth.driver?.organization_id
-  if (!orgId) return
+async function fetchGeoName(lat, lng) {
   try {
-    const { data } = await api.get('/preset-locations/nearby', { params: { lat, lng, organization_id: orgId } })
-    trackingLocationName.value = data?.name || ''
+    return await reverseGeocode(lat, lng) || ''
   } catch {
-    trackingLocationName.value = ''
+    return ''
   }
 }
 
 function onLocation(pos) {
   currentLat.value = pos.coords.latitude
   currentLng.value = pos.coords.longitude
-  fetchTrackingLocationName(pos.coords.latitude, pos.coords.longitude)
+  fetchGeoName(pos.coords.latitude, pos.coords.longitude).then((n) => { geoTracking.value = n })
 }
+
+watch(trip, async (t) => {
+  if (!t) return
+  if (t.pickup_lat != null && t.pickup_lng != null) {
+    geoPickup.value = await fetchGeoName(t.pickup_lat, t.pickup_lng)
+  }
+  if (t.drop_lat != null && t.drop_lng != null) {
+    geoDest.value = await fetchGeoName(t.drop_lat, t.drop_lng)
+  }
+}, { immediate: true })
 
 onMounted(async () => {
   try {

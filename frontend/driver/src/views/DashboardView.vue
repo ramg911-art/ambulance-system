@@ -32,7 +32,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
-import api from '../services/api'
+import { reverseGeocode } from '../services/mapsService'
 import GoogleMap from '../components/GoogleMap.vue'
 
 const auth = useAuthStore()
@@ -45,11 +45,9 @@ let watchId = null
 let intervalId = null
 
 async function fetchLocationName(lat, lng) {
-  const orgId = auth.driver?.organization_id
-  if (!orgId) return
   try {
-    const { data } = await api.get('/preset-locations/nearby', { params: { lat, lng, organization_id: orgId } })
-    locationName.value = data?.name || ''
+    const name = await reverseGeocode(lat, lng)
+    locationName.value = name || ''
   } catch {
     locationName.value = ''
   }
