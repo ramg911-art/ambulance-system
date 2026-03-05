@@ -25,9 +25,9 @@
       <p v-if="error" class="error">{{ error }}</p>
     </div>
 
-    <!-- Confirm end trip: optional additional amount -->
+    <!-- Confirm end trip: optional additional amount (shows first when user clicks End Trip) -->
     <Teleport to="body">
-      <div v-if="showEndTripModal" class="modal-overlay" @click.self="showEndTripModal = false">
+      <div v-if="showEndTripModal" class="modal-overlay end-trip-overlay" @click.self="showEndTripModal = false">
         <div class="summary-modal end-trip-modal">
           <h2>End Trip</h2>
           <p class="modal-hint">Add any additional amount received (optional).</p>
@@ -305,7 +305,10 @@ h1 { font-size: 1.25rem; }
   cursor: pointer;
 }
 
-/* End trip confirm modal */
+/* End trip confirm modal - above summary modal */
+.end-trip-overlay {
+  z-index: 1001;
+}
 .end-trip-modal .modal-hint {
   color: #64748b;
   font-size: 0.9rem;
