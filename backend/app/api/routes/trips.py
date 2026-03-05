@@ -2,13 +2,13 @@
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, func
 
 from app.api.deps import DbSession, get_current_admin, get_current_admin_or_driver, get_current_driver
 from app.models import Driver, Trip
-from app.schemas.trip import TripCreate, TripResponse
+from app.schemas.trip import TripCreate, TripEndRequest, TripResponse
 from app.services.trip_service import create_trip, start_trip, end_trip
 
 router = APIRouter(prefix="/trips", tags=["trips"])
@@ -112,9 +112,14 @@ def start_trip_endpoint(trip_id: int, db: DbSession) -> Trip:
 
 
 @router.post("/{trip_id}/end", response_model=TripResponse)
-def end_trip_endpoint(trip_id: int, db: DbSession) -> Trip:
-    """End a trip - calculates distance from GPS logs, bill, creates invoice."""
-    trip = end_trip(db, trip_id)
+def end_trip_endpoint(
+    trip_id: int,
+    db: DbSession,
+    body: TripEndRequest | None = Body(None),
+) -> Trip:
+    """End a trip - calculates distance from GPS logs, bill, optional additional amount, creates invoice."""
+    additional = body.additional_amount if body else None
+    trip = end_trip(db, trip_id, additional_amount=additional)
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found or not in progress")
     trip = (

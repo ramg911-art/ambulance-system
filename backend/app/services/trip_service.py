@@ -63,14 +63,16 @@ def _calculate_trip_distance(db: Session, trip_id: int) -> float:
     return total_km
 
 
-def end_trip(db: Session, trip_id: int) -> Optional[Trip]:
-    """End a trip: calculate distance from GPS logs, calculate bill, create invoice."""
+def end_trip(db: Session, trip_id: int, additional_amount: Optional[float] = None) -> Optional[Trip]:
+    """End a trip: calculate distance from GPS logs, calculate bill, add optional additional amount, create invoice."""
     trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not trip or trip.status != "in_progress":
         return None
     trip.end_time = datetime.utcnow()
     trip.distance_km = _calculate_trip_distance(db, trip_id)
     trip.total_amount = calculate_trip_cost(db, trip)
+    if additional_amount is not None and additional_amount != 0:
+        trip.total_amount = (trip.total_amount or 0) + additional_amount
     create_invoice(db, trip, trip.total_amount)
     trip.status = "completed"
     db.commit()

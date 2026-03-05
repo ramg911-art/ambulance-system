@@ -2,7 +2,20 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+
+class TripEndRequest(BaseModel):
+    """Optional body when ending a trip - additional amount to add to total."""
+
+    additional_amount: Optional[float] = None
+
+    @field_validator("additional_amount")
+    @classmethod
+    def additional_amount_non_negative(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
+            raise ValueError("additional_amount must be >= 0")
+        return v
 
 
 class TripCreate(BaseModel):

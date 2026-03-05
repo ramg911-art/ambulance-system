@@ -19,11 +19,39 @@
           <span v-if="geoTracking">{{ geoTracking }} (</span>{{ currentLat != null ? `${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}` : '—' }}<span v-if="geoTracking">)</span>
         </p>
       </div>
-      <button class="end-btn" @click="endTrip" :disabled="ending">
+      <button class="end-btn" @click="showEndTripModal = true" :disabled="ending">
         {{ ending ? 'Ending...' : 'End Trip' }}
       </button>
       <p v-if="error" class="error">{{ error }}</p>
     </div>
+
+    <!-- Confirm end trip: optional additional amount -->
+    <Teleport to="body">
+      <div v-if="showEndTripModal" class="modal-overlay" @click.self="showEndTripModal = false">
+        <div class="summary-modal end-trip-modal">
+          <h2>End Trip</h2>
+          <p class="modal-hint">Add any additional amount received (optional).</p>
+          <div class="form-row">
+            <label for="additional-amount">Additional amount (₹)</label>
+            <input
+              id="additional-amount"
+              v-model.number="additionalAmountInput"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0"
+              class="amount-input"
+            />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel-btn" @click="closeEndTripModal">Cancel</button>
+            <button type="button" class="confirm-end-btn" @click="confirmEndTrip" :disabled="ending">
+              {{ ending ? 'Ending...' : 'Confirm End Trip' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Trip summary popup after ending -->
     <Teleport to="body">
@@ -66,6 +94,8 @@ const ending = ref(false)
 const error = ref('')
 const summaryModalVisible = ref(false)
 const tripSummary = ref(null)
+const showEndTripModal = ref(false)
+const additionalAmountInput = ref('')
 
 let gpsInterval = null
 let watchId = null
@@ -154,11 +184,20 @@ function closeSummaryModal() {
   router.push('/trips/today')
 }
 
-async function endTrip() {
+function closeEndTripModal() {
+  showEndTripModal.value = false
+  additionalAmountInput.value = ''
+}
+
+async function confirmEndTrip() {
+  const additional = additionalAmountInput.value === '' || additionalAmountInput.value == null
+    ? null
+    : Number(additionalAmountInput.value)
   error.value = ''
   ending.value = true
+  closeEndTripModal()
   try {
-    const summary = await apiEndTrip(tripId)
+    const summary = await apiEndTrip(tripId, additional)
     tripSummary.value = summary
     summaryModalVisible.value = true
   } catch (e) {
@@ -264,5 +303,61 @@ h1 { font-size: 1.25rem; }
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* End trip confirm modal */
+.end-trip-modal .modal-hint {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.end-trip-modal .form-row {
+  margin-bottom: 1rem;
+}
+.end-trip-modal .form-row label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 0.35rem;
+}
+.end-trip-modal .amount-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+.end-trip-modal .modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.end-trip-modal .cancel-btn {
+  flex: 1;
+  padding: 0.75rem;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.end-trip-modal .confirm-end-btn {
+  flex: 1;
+  padding: 0.75rem;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.end-trip-modal .confirm-end-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
