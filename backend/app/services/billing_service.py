@@ -25,13 +25,13 @@ def calculate_trip_cost(db: Session, trip: Trip) -> float:
     return calculate_distance_tariff(distance, db)
 
 
-def create_invoice(db: Session, trip: Trip, amount: float) -> Invoice:
-    """Create invoice for a trip."""
+def create_invoice(db: Session, trip: Trip, amount: float, payment_received: bool = False) -> Invoice:
+    """Create invoice for a trip. Mark as paid if payment_received."""
     inv = Invoice(
         trip_id=trip.id,
         amount=amount,
         invoice_number=f"INV-{trip.id}-{uuid.uuid4().hex[:8].upper()}",
-        status="pending",
+        status="paid" if payment_received else "pending",
     )
     db.add(inv)
     db.commit()

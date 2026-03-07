@@ -10,11 +10,14 @@ export async function startTrip(tripId) {
   return data
 }
 
-export async function endTrip(tripId, additionalAmount = null) {
+export async function endTrip(tripId, additionalAmount = null, paymentReceived = false) {
   const num = Number(additionalAmount)
-  const body = (additionalAmount != null && additionalAmount !== '' && Number.isFinite(num) && num >= 0)
-    ? { additional_amount: num }
-    : {}
+  const body = {
+    payment_received: !!paymentReceived,
+    ...((additionalAmount != null && additionalAmount !== '' && Number.isFinite(num) && num >= 0)
+      ? { additional_amount: num }
+      : {}),
+  }
   const { data } = await api.post(`/trips/${tripId}/end`, body)
   return data
 }

@@ -47,23 +47,54 @@ def list_driver_trips_today(
     ]
 
 
+def _trip_to_response(t):
+    """Build TripResponse with driver_name and vehicle_registration_number."""
+    pickup_name = t.source_preset.name if t.source_preset else ("GPS pickup" if (t.pickup_lat is not None and t.pickup_lng is not None) else None)
+    dest_name = t.destination_preset.name if t.destination_preset else ("GPS destination" if (t.drop_lat is not None and t.drop_lng is not None) else None)
+    base = {k: getattr(t, k) for k in ("id", "organization_id", "driver_id", "vehicle_id", "source_preset_id", "destination_preset_id", "pickup_lat", "pickup_lng", "drop_lat", "drop_lng", "start_time", "end_time", "distance_km", "is_fixed_tariff", "total_amount", "status")}
+    base["pickup_location_name"] = pickup_name
+    base["destination_name"] = dest_name
+    base["driver_name"] = t.driver.name if t.driver else None
+    base["vehicle_registration_number"] = t.vehicle.registration_number if t.vehicle else None
+    return TripResponse(**base)
+
+
 @router.get("", response_model=list[TripResponse])
 def list_trips(
     db: DbSession,
     _admin=Depends(get_current_admin),
     organization_id: Optional[int] = Query(None),
     driver_id: Optional[int] = Query(None),
+    vehicle_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
+    date_from: Optional[date] = Query(None, description="Filter trips from this date (inclusive)"),
+    date_to: Optional[date] = Query(None, description="Filter trips until this date (inclusive)"),
 ) -> list[Trip]:
     """List trips with optional filters."""
-    q = db.query(Trip)
+    q = (
+        db.query(Trip)
+        .options(
+            joinedload(Trip.driver),
+            joinedload(Trip.vehicle),
+            joinedload(Trip.source_preset),
+            joinedload(Trip.destination_preset),
+        )
+    )
     if organization_id:
         q = q.filter(Trip.organization_id == organization_id)
     if driver_id:
         q = q.filter(Trip.driver_id == driver_id)
+    if vehicle_id:
+        q = q.filter(Trip.vehicle_id == vehicle_id)
     if status:
         q = q.filter(Trip.status == status)
-    return q.order_by(Trip.created_at.desc()).all()
+    trip_date = func.coalesce(func.date(Trip.start_time), func.date(Trip.created_at))
+    if date_from:
+        q = q.filter(trip_date >= date_from)
+    if date_to:
+        q = q.filter(trip_date <= date_to)
+    trips = q.order_by(Trip.created_at.desc()).all()
+    return [_trip_to_response(t) for t in trips]
 
 
 @router.post("", response_model=TripResponse)
@@ -119,7 +150,8 @@ def end_trip_endpoint(
 ) -> Trip:
     """End a trip - calculates distance from GPS logs, bill, optional additional amount, creates invoice."""
     additional = body.additional_amount if body else None
-    trip = end_trip(db, trip_id, additional_amount=additional)
+    payment_received = body.payment_received if body else False
+    trip = end_trip(db, trip_id, additional_amount=additional, payment_received=payment_received)
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found or not in progress")
     trip = (

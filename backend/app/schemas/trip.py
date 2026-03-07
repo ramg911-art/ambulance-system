@@ -6,9 +6,10 @@ from pydantic import BaseModel, field_validator
 
 
 class TripEndRequest(BaseModel):
-    """Optional body when ending a trip - additional amount to add to total."""
+    """Optional body when ending a trip - additional amount and payment received flag."""
 
     additional_amount: Optional[float] = None
+    payment_received: bool = False
 
     @field_validator("additional_amount")
     @classmethod
@@ -54,6 +55,8 @@ class TripResponse(BaseModel):
     status: str
     pickup_location_name: Optional[str] = None
     destination_name: Optional[str] = None
+    driver_name: Optional[str] = None
+    vehicle_registration_number: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -1,5 +1,5 @@
 <template>
-  <div class="live-tracking-map">
+  <div class="live-tracking-map" :style="{ height: typeof height === 'number' ? height + 'px' : height }">
     <div v-if="loadError" class="map-error">{{ loadError }}</div>
     <div v-else ref="mapContainer" class="map-container"></div>
   </div>
@@ -13,6 +13,7 @@ const ANIMATION_DURATION_MS = 20000
 
 const props = defineProps({
   locations: { type: Array, default: () => [] }, // [{ vehicle_id, latitude, longitude }]
+  height: { type: [Number, String], default: 450 }, // Map height in px or CSS value
 })
 
 const mapContainer = ref(null)
@@ -172,11 +173,12 @@ onUnmounted(() => {
 <style scoped>
 .live-tracking-map {
   width: 100%;
-  height: 450px;
+  min-height: 200px;
 }
 .map-container {
   width: 100%;
-  height: 450px;
+  height: 100%;
+  min-height: 200px;
 }
 .map-error {
   min-height: 200px;

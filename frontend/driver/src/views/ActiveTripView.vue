@@ -43,6 +43,12 @@
               class="amount-input"
             />
           </div>
+          <div class="form-row checkbox-row">
+            <label class="checkbox-label">
+              <input v-model="paymentReceived" type="checkbox" />
+              Payment received
+            </label>
+          </div>
           <div class="modal-actions">
             <button type="button" class="cancel-btn" @click="closeEndTripModal">Cancel</button>
             <button type="button" class="confirm-end-btn" @click="confirmEndTrip" :disabled="ending">
@@ -96,6 +102,7 @@ const summaryModalVisible = ref(false)
 const tripSummary = ref(null)
 const showEndTripModal = ref(false)
 const additionalAmountInput = ref('')
+const paymentReceived = ref(false)
 
 let gpsInterval = null
 let watchId = null
@@ -187,17 +194,19 @@ function closeSummaryModal() {
 function closeEndTripModal() {
   showEndTripModal.value = false
   additionalAmountInput.value = ''
+  paymentReceived.value = false
 }
 
 async function confirmEndTrip() {
   const additional = additionalAmountInput.value === '' || additionalAmountInput.value == null
     ? null
     : Number(additionalAmountInput.value)
+  const paid = paymentReceived.value
   error.value = ''
   ending.value = true
   closeEndTripModal()
   try {
-    const summary = await apiEndTrip(tripId, additional)
+    const summary = await apiEndTrip(tripId, additional, paid)
     tripSummary.value = summary
     summaryModalVisible.value = true
   } catch (e) {
@@ -324,6 +333,15 @@ h1 { font-size: 1.25rem; }
   color: #334155;
   margin-bottom: 0.35rem;
 }
+.checkbox-row { margin-bottom: 0.5rem; }
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.checkbox-label input { width: auto; }
 .end-trip-modal .amount-input {
   width: 100%;
   padding: 0.6rem 0.75rem;
