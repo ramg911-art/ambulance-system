@@ -1,8 +1,11 @@
 <template>
   <div class="dashboard">
     <header class="header">
-      <h1>Hello {{ driverName }}</h1>
-      <button @click="logout" class="logout">Logout</button>
+      <h1 class="main-title">Ambulance fleet management system</h1>
+      <div class="header-right">
+        <span class="greeting">Hello {{ driverName }}</span>
+        <button @click="logout" class="logout">Logout</button>
+      </div>
     </header>
     <div class="content">
       <div class="map-card">
@@ -19,15 +22,17 @@
           />
         </div>
       </div>
-      <div class="card" @click="$router.push('/start')">
-        <span class="icon">🚑</span>
-        <h2>Start New Trip</h2>
-        <p>Begin a new ambulance trip</p>
-      </div>
-      <div class="card" @click="$router.push('/trips/today')">
-        <span class="icon">📋</span>
-        <h2>Today's Trips</h2>
-        <p>View today's completed trips</p>
+      <div class="cards">
+        <div class="card" @click="$router.push('/start')">
+          <span class="icon">🚑</span>
+          <h2>Start New Trip</h2>
+          <p>Begin a new ambulance trip</p>
+        </div>
+        <div class="card" @click="$router.push('/trips/today')">
+          <span class="icon">📋</span>
+          <h2>Today's Trips</h2>
+          <p>View today's completed trips</p>
+        </div>
       </div>
     </div>
   </div>
@@ -102,18 +107,40 @@ onUnmounted(() => {
 
 <style scoped>
 .dashboard {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: #f8fafc;
 }
 .header {
+  flex-shrink: 0;
   background: #1e3a8a;
   color: white;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
 }
-h1 { font-size: 1.25rem; }
+.main-title {
+  font-size: 1rem;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.greeting {
+  font-size: 0.9rem;
+  opacity: 0.95;
+}
 .logout {
   background: rgba(255,255,255,0.2);
   border: none;
@@ -123,13 +150,20 @@ h1 { font-size: 1.25rem; }
   cursor: pointer;
 }
 .content {
-  padding: 1.5rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 .map-card {
+  flex-shrink: 1;
+  min-height: 0;
   background: white;
-  border-radius: 1rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .map-card h3 {
@@ -140,11 +174,16 @@ h1 { font-size: 1.25rem; }
 .location-error { color: #dc2626; font-size: 0.875rem; margin-bottom: 0.5rem; }
 .location-hint { color: #64748b; font-size: 0.875rem; margin-bottom: 0.5rem; }
 .location-info { color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem; }
-.map-box { height: 240px; border-radius: 0.5rem; overflow: hidden; }
+.map-box { height: 160px; border-radius: 0.5rem; overflow: hidden; }
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
 .card {
   background: white;
-  border-radius: 1rem;
-  padding: 2rem;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
   text-align: center;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -153,7 +192,7 @@ h1 { font-size: 1.25rem; }
 .card:active {
   transform: scale(0.98);
 }
-.icon { font-size: 3rem; display: block; margin-bottom: 0.5rem; }
-h2 { font-size: 1.25rem; color: #1e293b; margin-bottom: 0.25rem; }
-p { color: #64748b; font-size: 0.9rem; }
+.icon { font-size: 2.25rem; display: block; margin-bottom: 0.35rem; }
+.card h2 { font-size: 1rem; color: #1e293b; margin-bottom: 0.2rem; }
+.card p { color: #64748b; font-size: 0.8rem; }
 </style>

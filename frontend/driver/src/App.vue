@@ -1,7 +1,9 @@
 <template>
   <div class="app">
     <InstallBanner v-if="!$route.meta.guest" />
-    <router-view />
+    <main class="main-content">
+      <router-view />
+    </main>
     <footer class="footer" v-if="!$route.meta.guest">
       Developed by Dr Ram Gopal 2026 All rights reserved.
     </footer>
@@ -26,12 +28,15 @@ html, body {
   background: #f1f5f9;
 }
 .app {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-.app > :first-child {
+.main-content {
   flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 .footer {
   padding: 0.75rem 1rem;
