@@ -35,7 +35,14 @@ def create_organization(data: OrganizationCreate, db: DbSession) -> Organization
     existing = db.query(Organization).filter(Organization.code == code).first()
     if existing:
         raise HTTPException(status_code=400, detail="Organization with this code already exists")
-    org = Organization(name=name, code=code, active=data.active)
+    org = Organization(
+        name=name,
+        code=code,
+        address=(data.address or "").strip() or None,
+        phone=(data.phone or "").strip() or None,
+        email=(data.email or "").strip() or None,
+        active=data.active,
+    )
     db.add(org)
     db.commit()
     db.refresh(org)
@@ -59,6 +66,12 @@ def update_organization(org_id: int, data: OrganizationUpdate, db: DbSession) ->
         raise HTTPException(status_code=404, detail="Organization not found")
     if data.name is not None:
         org.name = data.name.strip() or org.name
+    if data.address is not None:
+        org.address = data.address.strip() or None
+    if data.phone is not None:
+        org.phone = data.phone.strip() or None
+    if data.email is not None:
+        org.email = data.email.strip() or None
     if data.code is not None:
         new_code = data.code.strip().upper()
         if new_code:

@@ -35,6 +35,12 @@
           <input v-model="form.name" type="text" required placeholder="e.g. City Ambulance Service" />
           <label>Code</label>
           <input v-model="form.code" type="text" required placeholder="e.g. CAS" :disabled="!!editingId" />
+          <label>Address</label>
+          <textarea v-model="form.address" rows="2" placeholder="Full address"></textarea>
+          <label>Phone</label>
+          <input v-model="form.phone" type="text" placeholder="e.g. +91 1234567890" />
+          <label>Email</label>
+          <input v-model="form.email" type="email" placeholder="e.g. contact@example.com" />
           <label><input type="checkbox" v-model="form.active" /> Active</label>
           <div class="modal-actions">
             <button type="button" @click="showModal = false">Cancel</button>
@@ -56,6 +62,9 @@ const editingId = ref(null)
 const form = ref({
   name: '',
   code: '',
+  address: '',
+  phone: '',
+  email: '',
   active: true,
 })
 
@@ -71,7 +80,7 @@ async function load() {
 
 function openCreate() {
   editingId.value = null
-  form.value = { name: '', code: '', active: true }
+  form.value = { name: '', code: '', address: '', phone: '', email: '', active: true }
   showModal.value = true
 }
 
@@ -93,18 +102,18 @@ async function save() {
     return
   }
   try {
+    const payload = {
+      name,
+      code: code.toUpperCase(),
+      address: (form.value.address || '').trim() || undefined,
+      phone: (form.value.phone || '').trim() || undefined,
+      email: (form.value.email || '').trim() || undefined,
+      active: form.value.active,
+    }
     if (editingId.value) {
-      await api.patch(`/organizations/${editingId.value}`, {
-        name,
-        code: code.toUpperCase(),
-        active: form.value.active,
-      })
+      await api.patch(`/organizations/${editingId.value}`, payload)
     } else {
-      await api.post('/organizations', {
-        name,
-        code: code.toUpperCase(),
-        active: form.value.active,
-      })
+      await api.post('/organizations', payload)
     }
     showModal.value = false
     await load()
@@ -145,6 +154,9 @@ tr:not(:last-child) td { border-bottom: 1px solid #e2e8f0; }
 .modal { background: white; padding: 1.5rem; border-radius: 0.5rem; min-width: 320px; }
 .modal h3 { margin-bottom: 1rem; }
 .modal label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; }
-.modal input[type="text"] { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; }
+.modal input[type="text"], .modal input[type="email"], .modal textarea {
+  width: 100%; padding: 0.5rem; margin-bottom: 0.75rem;
+  box-sizing: border-box; resize: vertical;
+}
 .modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
 </style>

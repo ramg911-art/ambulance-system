@@ -36,3 +36,7 @@ class InvoiceWithTripResponse(BaseModel):
     total_amount: Optional[float] = None
     pickup_location: Optional[str] = None
     drop_location: Optional[str] = None
+    organization_name: Optional[str] = None
+    organization_address: Optional[str] = None
+    organization_phone: Optional[str] = None
+    organization_email: Optional[str] = None

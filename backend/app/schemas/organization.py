@@ -9,6 +9,9 @@ class OrganizationCreate(BaseModel):
 
     name: str
     code: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
     active: bool = True
 
 
@@ -17,6 +20,9 @@ class OrganizationUpdate(BaseModel):
 
     name: Optional[str] = None
     code: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
     active: Optional[bool] = None
 
 
@@ -26,6 +32,9 @@ class OrganizationResponse(BaseModel):
     id: int
     name: str
     code: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
     active: bool
 
     class Config:

@@ -42,6 +42,7 @@ def get_invoice_with_trip(invoice_id: int, db: DbSession) -> InvoiceWithTripResp
         .options(joinedload(Invoice.trip).joinedload(Trip.vehicle))
         .options(joinedload(Invoice.trip).joinedload(Trip.source_preset))
         .options(joinedload(Invoice.trip).joinedload(Trip.destination_preset))
+        .options(joinedload(Invoice.trip).joinedload(Trip.organization))
         .filter(Invoice.id == invoice_id)
         .first()
     )
@@ -54,6 +55,7 @@ def get_invoice_with_trip(invoice_id: int, db: DbSession) -> InvoiceWithTripResp
     drop = t.destination_preset.name if t.destination_preset else None
     if not drop and t.drop_lat is not None and t.drop_lng is not None:
         drop = f"GPS: {t.drop_lat:.4f}, {t.drop_lng:.4f}"
+    org = t.organization if hasattr(t, "organization") else None
     return InvoiceWithTripResponse(
         id=inv.id,
         trip_id=inv.trip_id,
@@ -69,6 +71,10 @@ def get_invoice_with_trip(invoice_id: int, db: DbSession) -> InvoiceWithTripResp
         total_amount=t.total_amount,
         pickup_location=pickup,
         drop_location=drop,
+        organization_name=org.name if org else None,
+        organization_address=org.address if org else None,
+        organization_phone=org.phone if org else None,
+        organization_email=org.email if org else None,
     )
 
 

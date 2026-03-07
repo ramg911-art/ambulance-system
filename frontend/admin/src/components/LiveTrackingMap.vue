@@ -64,7 +64,7 @@ async function initMap() {
       return
     }
     const map = new window.google.maps.Map(mapContainer.value, {
-      center: { lat: 12.9716, lng: 77.5946 },
+      center: { lat: 9.2685, lng: 76.557 }, // Sreekantapuram Hospital, Mavelikara, Kerala
       zoom: 12,
       mapTypeControl: true,
       streetViewControl: false,

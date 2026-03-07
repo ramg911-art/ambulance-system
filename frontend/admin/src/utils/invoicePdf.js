@@ -27,7 +27,29 @@ export function generateInvoicePdf(data) {
   doc.setFont(FONT, 'normal')
   doc.text(`#${data.invoice_number}`, 20, y)
   doc.text(`Trip #${data.trip_id}`, w - 20, y, { align: 'right' })
-  y += 15
+  y += 10
+
+  // Organization info
+  if (data.organization_name) {
+    doc.setFont(FONT, 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(51, 65, 85)
+    doc.text(data.organization_name, 20, y)
+    y += 5
+  }
+  if (data.organization_address) {
+    doc.setFont(FONT, 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(...MUTED)
+    doc.text(data.organization_address, 20, y)
+    y += 5
+  }
+  if (data.organization_phone || data.organization_email) {
+    const contact = [data.organization_phone, data.organization_email].filter(Boolean).join(' • ')
+    doc.text(contact, 20, y)
+    y += 5
+  }
+  y += 5
 
   // Divider
   doc.setDrawColor(...BORDER)
