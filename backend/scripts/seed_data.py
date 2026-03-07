@@ -43,7 +43,8 @@ def seed():
         driver = Driver(
             organization_id=org.id,
             name="John Driver",
-            phone="+1234567890",
+            user_id="+1234567890",
+            mobile="+1234567890",
             password_hash=hash_password("driver123"),
             license_number="DL-001",
             active=True,

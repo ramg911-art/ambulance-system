@@ -9,7 +9,8 @@ class DriverCreate(BaseModel):
 
     organization_id: int
     name: str = Field(..., min_length=1, strip_whitespace=True)
-    phone: str = Field(..., min_length=1, strip_whitespace=True)
+    user_id: str = Field(..., min_length=1, strip_whitespace=True)
+    mobile: Optional[str] = None
     password: str = Field(..., min_length=1)
     license_number: Optional[str] = None
     active: bool = True
@@ -19,7 +20,8 @@ class DriverUpdate(BaseModel):
     """Update driver."""
 
     name: Optional[str] = None
-    phone: Optional[str] = None
+    user_id: Optional[str] = None
+    mobile: Optional[str] = None
     password: Optional[str] = None
     license_number: Optional[str] = None
     active: Optional[bool] = None
@@ -31,7 +33,8 @@ class DriverResponse(BaseModel):
     id: int
     organization_id: int
     name: str
-    phone: str
+    user_id: str
+    mobile: Optional[str] = None
     license_number: Optional[str] = None
     active: bool
 

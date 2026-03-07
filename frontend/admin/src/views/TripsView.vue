@@ -20,7 +20,7 @@
         <label>Driver</label>
         <select v-model="filterDriverId" class="filter-select">
           <option value="">All drivers</option>
-          <option v-for="d in drivers" :key="d.id" :value="d.id">{{ d.name }} ({{ d.phone }})</option>
+          <option v-for="d in drivers" :key="d.id" :value="d.id">{{ d.name }} ({{ d.user_id }})</option>
         </select>
       </div>
       <div class="filter-row">

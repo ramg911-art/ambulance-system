@@ -8,8 +8,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isLoggedIn = computed(() => !!token.value)
 
-  async function login(phone, password) {
-    const { data } = await api.post('/auth/login', { phone, password })
+  async function login(userId, password) {
+    const { data } = await api.post('/auth/login', { user_id: userId, password })
     token.value = data.access_token
     driver.value = data.driver
       ? { id: data.driver.id, organization_id: data.driver.organization_id, name: data.driver.name }

@@ -5,9 +5,9 @@
       <p class="subtitle">Sign in to continue</p>
       <form @submit.prevent="handleLogin" class="form">
         <input
-          v-model="phone"
+          v-model="userId"
           type="tel"
-          placeholder="Phone number"
+          placeholder="User ID"
           autocapitalize="off"
           autocomplete="tel"
           required
@@ -22,7 +22,7 @@
         <p v-if="error" class="error">{{ error }}</p>
         <button type="submit" :disabled="loading">Sign In</button>
       </form>
-      <p class="hint">Default: +1234567890 / driver123 (run seed_data.py first)</p>
+      <p class="hint">Default: +1234567890 / driver123 (User ID / password - run seed_data.py first)</p>
     </div>
   </div>
 </template>
@@ -35,7 +35,7 @@ import { useAuthStore } from '../stores/auth'
 const router = useRouter()
 const auth = useAuthStore()
 
-const phone = ref('')
+const userId = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -44,7 +44,7 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
   try {
-    await auth.login(phone.value, password.value)
+    await auth.login(userId.value, password.value)
     router.push('/')
   } catch (e) {
     error.value = e.response?.data?.detail || (e.response ? `Error ${e.response.status}` : 'Network error - check API URL and backend')

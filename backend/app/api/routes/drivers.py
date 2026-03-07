@@ -38,13 +38,14 @@ def create_driver(data: DriverCreate, db: DbSession) -> Driver:
         org = db.query(Organization).filter(Organization.id == data.organization_id).first()
         if not org:
             raise HTTPException(status_code=400, detail=f"Organization {data.organization_id} not found. Run seed_data.py first.")
-        existing = db.query(Driver).filter(Driver.phone == data.phone).first()
+        existing = db.query(Driver).filter(Driver.user_id == data.user_id).first()
         if existing:
-            raise HTTPException(status_code=400, detail="Phone number already registered")
+            raise HTTPException(status_code=400, detail="User ID already registered")
         d = Driver(
             organization_id=data.organization_id,
             name=data.name,
-            phone=data.phone,
+            user_id=data.user_id,
+            mobile=(data.mobile or "").strip() or None,
             password_hash=hash_password(data.password),
             license_number=data.license_number,
             active=data.active,
@@ -52,7 +53,7 @@ def create_driver(data: DriverCreate, db: DbSession) -> Driver:
         db.add(d)
         db.commit()
         db.refresh(d)
-        logger.info("Created driver id=%s phone=%s org=%s", d.id, data.phone, data.organization_id)
+        logger.info("Created driver id=%s user_id=%s org=%s", d.id, data.user_id, data.organization_id)
         return d
     except HTTPException:
         raise
@@ -78,11 +79,13 @@ def update_driver(driver_id: int, data: DriverUpdate, db: DbSession) -> Driver:
         raise HTTPException(status_code=404, detail="Driver not found")
     if data.name is not None:
         d.name = data.name
-    if data.phone is not None:
-        other = db.query(Driver).filter(Driver.phone == data.phone, Driver.id != driver_id).first()
+    if data.user_id is not None:
+        other = db.query(Driver).filter(Driver.user_id == data.user_id, Driver.id != driver_id).first()
         if other:
-            raise HTTPException(status_code=400, detail="Phone number already in use")
-        d.phone = data.phone
+            raise HTTPException(status_code=400, detail="User ID already in use")
+        d.user_id = data.user_id
+    if data.mobile is not None:
+        d.mobile = data.mobile.strip() or None
     if data.password is not None:
         d.password_hash = hash_password(data.password)
     if data.license_number is not None:

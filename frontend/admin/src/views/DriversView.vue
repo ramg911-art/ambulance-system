@@ -8,7 +8,8 @@
           <tr>
             <th>ID</th>
             <th>Name</th>
-            <th>Phone</th>
+            <th>User ID</th>
+            <th>Mobile</th>
             <th>Org</th>
             <th>Active</th>
             <th>Actions</th>
@@ -18,7 +19,8 @@
           <tr v-for="d in drivers" :key="d.id || d">
             <td>{{ d.id ?? '-' }}</td>
             <td>{{ d.name || '-' }}</td>
-            <td>{{ d.phone || '-' }}</td>
+            <td>{{ d.user_id || '-' }}</td>
+            <td>{{ d.mobile || '-' }}</td>
             <td>{{ d.organization_id ?? '-' }}</td>
             <td>{{ d.active ? 'Yes' : 'No' }}</td>
             <td>
@@ -37,8 +39,10 @@
           <input v-model.number="form.organization_id" type="number" required :disabled="!!editingId" />
           <label>Name</label>
           <input v-model="form.name" required />
-          <label>Phone</label>
-          <input v-model="form.phone" required :disabled="!!editingId" />
+          <label>User ID</label>
+          <input v-model="form.user_id" required :disabled="!!editingId" placeholder="Login identifier" />
+          <label>Mobile</label>
+          <input v-model="form.mobile" type="text" placeholder="e.g. +91 1234567890" />
           <label>Password {{ editingId ? '(leave blank to keep)' : '' }}</label>
           <input v-model="form.password" type="password" :required="!editingId" :placeholder="editingId ? 'Leave blank to keep' : ''" />
           <label>License Number</label>
@@ -64,7 +68,8 @@ const editingId = ref(null)
 const form = ref({
   organization_id: 1,
   name: '',
-  phone: '',
+  user_id: '',
+  mobile: '',
   password: '',
   license_number: '',
   active: true,
@@ -82,7 +87,7 @@ async function load() {
 
 function openCreate() {
   editingId.value = null
-  form.value = { organization_id: 1, name: '', phone: '', password: '', license_number: '', active: true }
+  form.value = { organization_id: 1, name: '', user_id: '', mobile: '', password: '', license_number: '', active: true }
   showModal.value = true
 }
 
@@ -94,9 +99,9 @@ function openEdit(d) {
 
 async function save() {
   const name = (form.value.name || '').trim()
-  const phone = (form.value.phone || '').trim()
-  if (!name || !phone) {
-    alert('Name and phone are required')
+  const userId = (form.value.user_id || '').trim()
+  if (!name || !userId) {
+    alert('Name and User ID are required')
     return
   }
   if (!editingId.value && !(form.value.password || '').trim()) {
@@ -105,14 +110,21 @@ async function save() {
   }
   try {
     if (editingId.value) {
-      const payload = { name, license_number: (form.value.license_number || '').trim() || null, active: form.value.active }
+      const payload = {
+        name,
+        user_id: userId,
+        mobile: (form.value.mobile || '').trim() || null,
+        license_number: (form.value.license_number || '').trim() || null,
+        active: form.value.active,
+      }
       if (form.value.password?.trim()) payload.password = form.value.password.trim()
       await api.patch(`/drivers/${editingId.value}`, payload)
     } else {
       await api.post('/drivers', {
         organization_id: form.value.organization_id,
         name,
-        phone,
+        user_id: userId,
+        mobile: (form.value.mobile || '').trim() || undefined,
         password: form.value.password.trim(),
         license_number: (form.value.license_number || '').trim() || null,
         active: form.value.active,

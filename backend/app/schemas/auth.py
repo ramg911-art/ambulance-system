@@ -5,7 +5,7 @@ from pydantic import BaseModel
 class LoginRequest(BaseModel):
     """Driver login request."""
 
-    phone: str
+    user_id: str
     password: str
 
 

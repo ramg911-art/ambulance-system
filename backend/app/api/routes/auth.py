@@ -12,17 +12,17 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=DriverLoginResponse)
 def driver_login(data: LoginRequest, db: DbSession) -> DriverLoginResponse:
-    """Driver login using phone and password. Returns JWT."""
-    driver = db.query(Driver).filter(Driver.phone == data.phone).first()
+    """Driver login using user_id and password. Returns JWT."""
+    driver = db.query(Driver).filter(Driver.user_id == data.user_id).first()
     if not driver or not driver.active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid phone or password",
+            detail="Invalid user ID or password",
         )
     if not verify_password(data.password, driver.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid phone or password",
+            detail="Invalid user ID or password",
         )
     token = create_access_token({"sub": str(driver.id), "type": "driver"})
     return {
