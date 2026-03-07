@@ -1,11 +1,11 @@
 <template>
   <div class="dashboard">
     <header class="header">
-      <h1 class="main-title">Ambulance fleet management system</h1>
-      <div class="header-right">
+      <div class="header-top">
         <span class="greeting">Hello {{ driverName }}</span>
         <button @click="logout" class="logout">Logout</button>
       </div>
+      <h1 class="sub-header">Ambulance fleet management system</h1>
     </header>
     <div class="content">
       <div class="map-card">
@@ -117,25 +117,19 @@ onUnmounted(() => {
   flex-shrink: 0;
   background: #1e3a8a;
   color: white;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
+}
+.header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
 }
-.main-title {
-  font-size: 1rem;
+.sub-header {
+  font-size: 0.9rem;
   font-weight: 600;
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  margin: 0.35rem 0 0;
+  opacity: 0.95;
+  line-height: 1.2;
 }
 .greeting {
   font-size: 0.9rem;

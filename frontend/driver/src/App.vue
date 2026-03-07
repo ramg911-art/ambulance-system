@@ -39,10 +39,11 @@ html, body {
   overflow: auto;
 }
 .footer {
-  padding: 0.75rem 1rem;
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
   background: #1e293b;
   color: #94a3b8;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-align: center;
 }
 </style>
