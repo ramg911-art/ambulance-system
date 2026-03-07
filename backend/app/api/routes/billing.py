@@ -64,6 +64,7 @@ def get_invoice_with_trip(invoice_id: int, db: DbSession) -> InvoiceWithTripResp
         status=inv.status,
         created_at=inv.created_at,
         driver_name=t.driver.name if t.driver else None,
+        driver_mobile=t.driver.mobile if t.driver else None,
         vehicle_registration=t.vehicle.registration_number if t.vehicle else None,
         start_time=t.start_time,
         end_time=t.end_time,

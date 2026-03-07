@@ -29,6 +29,7 @@ class InvoiceWithTripResponse(BaseModel):
     status: str
     created_at: datetime
     driver_name: Optional[str] = None
+    driver_mobile: Optional[str] = None
     vehicle_registration: Optional[str] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None

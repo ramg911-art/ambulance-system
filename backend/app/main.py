@@ -17,6 +17,7 @@ from app.api.routes import (
     trips,
     gps,
     vehicles,
+    vehicle_expenses,
     preset_locations,
     preset_destinations,
     billing,
@@ -126,6 +127,7 @@ app.include_router(auth.router)
 app.include_router(trips.router)
 app.include_router(gps.router)
 app.include_router(vehicles.router)
+app.include_router(vehicle_expenses.router)
 app.include_router(preset_locations.router)
 app.include_router(preset_destinations.router)
 app.include_router(billing.router)

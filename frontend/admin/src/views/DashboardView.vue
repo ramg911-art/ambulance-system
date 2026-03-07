@@ -186,7 +186,7 @@ const topLocations = computed(() => {
 async function loadData() {
   const { from, to } = getDateRange()
   try {
-    const [oRes, vRes, liveRes, tripsRes, expRes] = await Promise.all([
+    const [oRes, vRes, liveRes, tripsRes, expRes] = await Promise.allSettled([
       api.get('/organizations'),
       api.get('/vehicles', { params: { active_only: false } }),
       api.get('/gps/vehicles/live'),
@@ -197,11 +197,14 @@ async function loadData() {
         params: { ...(from && { date_from: from }), ...(to && { date_to: to }) },
       }),
     ])
-    orgs.value = oRes.data?.length ?? 0
-    vehiclesTotal.value = vRes.data?.length ?? 0
-    liveLocations.value = liveRes.data ?? []
-    tripsData.value = tripsRes.data ?? []
-    expensesTotal.value = expRes.data?.total_amount ?? 0
+    orgs.value = oRes.status === 'fulfilled' ? (oRes.value.data?.length ?? 0) : 0
+    vehiclesTotal.value = vRes.status === 'fulfilled' ? (vRes.value.data?.length ?? 0) : 0
+    liveLocations.value = liveRes.status === 'fulfilled' ? (liveRes.value.data ?? []) : []
+    tripsData.value = tripsRes.status === 'fulfilled' ? (tripsRes.value.data ?? []) : []
+    expensesTotal.value = expRes.status === 'fulfilled' ? (expRes.value.data?.total_amount ?? 0) : 0
+    if (oRes.status === 'rejected' || vRes.status === 'rejected' || tripsRes.status === 'rejected') {
+      console.error('Dashboard load error:', oRes.status === 'rejected' ? oRes.reason : '', vRes.status === 'rejected' ? vRes.reason : '', tripsRes.status === 'rejected' ? tripsRes.reason : '')
+    }
   } catch (e) {
     console.error('Dashboard load error:', e)
   }

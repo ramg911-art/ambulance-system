@@ -22,3 +22,4 @@ class Vehicle(Base):
     organization = relationship("Organization", back_populates="vehicles")
     trips = relationship("Trip", back_populates="vehicle")
     gps_logs = relationship("GPSLog", back_populates="vehicle")
+    expenses = relationship("VehicleExpense", back_populates="vehicle")

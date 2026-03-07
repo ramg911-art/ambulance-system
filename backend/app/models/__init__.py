@@ -10,6 +10,7 @@ from app.models.distance_tariff_config import DistanceTariffConfig
 from app.models.trip import Trip
 from app.models.gps_log import GPSLog
 from app.models.invoice import Invoice
+from app.models.vehicle_expense import VehicleExpense
 
 __all__ = [
     "AdminUser",
@@ -23,4 +24,5 @@ __all__ = [
     "Trip",
     "GPSLog",
     "Invoice",
+    "VehicleExpense",
 ]
