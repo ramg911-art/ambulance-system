@@ -19,6 +19,10 @@
           autocomplete="current-password"
           required
         />
+        <label class="remember-row">
+          <input v-model="rememberMe" type="checkbox" />
+          Remember me (stay logged in until logout)
+        </label>
         <p v-if="error" class="error">{{ error }}</p>
         <button type="submit" :disabled="loading">Sign In</button>
       </form>
@@ -28,7 +32,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -37,6 +41,12 @@ const auth = useAuthStore()
 
 const userId = ref('')
 const password = ref('')
+const rememberMe = ref(true)
+
+onMounted(() => {
+  const saved = localStorage.getItem('driver_remembered_user_id')
+  if (saved) userId.value = saved
+})
 const error = ref('')
 const loading = ref(false)
 
@@ -44,7 +54,7 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
   try {
-    await auth.login(userId.value, password.value)
+    await auth.login(userId.value, password.value, rememberMe.value)
     router.push('/')
   } catch (e) {
     error.value = e.response?.data?.detail || (e.response ? `Error ${e.response.status}` : 'Network error - check API URL and backend')
@@ -109,6 +119,16 @@ h1 {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.remember-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #475569;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+.remember-row input { width: auto; margin: 0; }
 .error {
   color: #dc2626;
   font-size: 0.875rem;

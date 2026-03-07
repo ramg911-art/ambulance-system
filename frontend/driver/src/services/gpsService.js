@@ -12,7 +12,7 @@ export async function updateLocation(vehicleId, lat, lng, tripId = null) {
     'Content-Type': 'application/json',
     ...(api.defaults.headers.common || {}),
   }
-  const token = localStorage.getItem('driver_token')
+  const token = localStorage.getItem('driver_token') || sessionStorage.getItem('driver_token')
   if (token) headers.Authorization = `Bearer ${token}`
 
   const res = await fetch(url, {
