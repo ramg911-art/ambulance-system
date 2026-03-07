@@ -106,6 +106,9 @@ const paymentReceived = ref(false)
 
 let gpsInterval = null
 let watchId = null
+let onVisibilityChange = null
+const GPS_INTERVAL_VISIBLE = 5000
+const GPS_INTERVAL_HIDDEN = 30000
 
 function formatCoords(lat, lng) {
   if (lat != null && lng != null) return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
@@ -146,7 +149,7 @@ onMounted(async () => {
   }
   if (navigator.geolocation) {
     watchId = navigator.geolocation.watchPosition(onLocation, () => {})
-    gpsInterval = setInterval(async () => {
+    const tick = async () => {
       if (currentLat.value && currentLng.value && trip.value) {
         await updateLocation(
           trip.value.vehicle_id,
@@ -155,11 +158,19 @@ onMounted(async () => {
           trip.value.id
         )
       }
-    }, 5000)
+    }
+    onVisibilityChange = () => {
+      if (gpsInterval) clearInterval(gpsInterval)
+      const interval = document.hidden ? GPS_INTERVAL_HIDDEN : GPS_INTERVAL_VISIBLE
+      gpsInterval = setInterval(tick, interval)
+    }
+    onVisibilityChange()
+    document.addEventListener('visibilitychange', onVisibilityChange)
   }
 })
 
 onUnmounted(() => {
+  if (onVisibilityChange) document.removeEventListener('visibilitychange', onVisibilityChange)
   if (gpsInterval) clearInterval(gpsInterval)
   if (watchId) navigator.geolocation.clearWatch(watchId)
 })

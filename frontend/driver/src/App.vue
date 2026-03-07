@@ -1,5 +1,6 @@
 <template>
   <div class="app">
+    <InstallBanner v-if="!$route.meta.guest" />
     <router-view />
     <footer class="footer" v-if="!$route.meta.guest">
       Developed by Dr Ram Gopal 2026 All rights reserved.
@@ -8,6 +9,7 @@
 </template>
 
 <script setup>
+import InstallBanner from './components/InstallBanner.vue'
 </script>
 
 <style>
