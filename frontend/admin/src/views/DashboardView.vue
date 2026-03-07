@@ -53,6 +53,11 @@
         <h3>Vehicles</h3>
         <p class="stat-value">{{ vehiclesTotal }}</p>
       </div>
+      <div class="tile tile-stat">
+        <h3>Vehicle Expenses</h3>
+        <p class="stat-value">{{ expensesFormatted }}</p>
+        <p class="stat-label">in selected period</p>
+      </div>
 
       <!-- Top drivers tile -->
       <div class="tile tile-list">
@@ -95,6 +100,7 @@ const orgs = ref(0)
 const vehiclesTotal = ref(0)
 const liveLocations = ref([])
 const tripsData = ref([])
+const expensesTotal = ref(0)
 
 function getDateRange() {
   const today = new Date()
@@ -137,6 +143,10 @@ function onDatePresetChange() {
 
 const tripsCount = computed(() => tripsData.value.length)
 
+const expensesFormatted = computed(() =>
+  `₹${Number(expensesTotal.value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+)
+
 const collectionFormatted = computed(() => {
   const sum = tripsData.value.reduce((a, t) => a + (t.total_amount || 0), 0)
   return `₹${sum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
@@ -176,11 +186,14 @@ const topLocations = computed(() => {
 async function loadData() {
   const { from, to } = getDateRange()
   try {
-    const [oRes, vRes, liveRes, tripsRes] = await Promise.all([
+    const [oRes, vRes, liveRes, tripsRes, expRes] = await Promise.all([
       api.get('/organizations'),
       api.get('/vehicles', { params: { active_only: false } }),
       api.get('/gps/vehicles/live'),
       api.get('/trips', {
+        params: { ...(from && { date_from: from }), ...(to && { date_to: to }) },
+      }),
+      api.get('/vehicle-expenses/summary', {
         params: { ...(from && { date_from: from }), ...(to && { date_to: to }) },
       }),
     ])
@@ -188,6 +201,7 @@ async function loadData() {
     vehiclesTotal.value = vRes.data?.length ?? 0
     liveLocations.value = liveRes.data ?? []
     tripsData.value = tripsRes.data ?? []
+    expensesTotal.value = expRes.data?.total_amount ?? 0
   } catch (e) {
     console.error('Dashboard load error:', e)
   }
