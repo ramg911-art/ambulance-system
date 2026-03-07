@@ -56,7 +56,7 @@
       <div class="tile tile-stat">
         <h3>Vehicle Expenses</h3>
         <p class="stat-value">{{ expensesFormatted }}</p>
-        <p class="stat-label">in selected period</p>
+        <p class="stat-label">total (all time)</p>
       </div>
 
       <!-- Top drivers tile -->
@@ -193,9 +193,7 @@ async function loadData() {
       api.get('/trips', {
         params: { ...(from && { date_from: from }), ...(to && { date_to: to }) },
       }),
-      api.get('/vehicle-expenses/summary', {
-        params: { ...(from && { date_from: from }), ...(to && { date_to: to }) },
-      }),
+      api.get('/vehicle-expenses/summary'),
     ])
     orgs.value = oRes.status === 'fulfilled' ? (oRes.value.data?.length ?? 0) : 0
     vehiclesTotal.value = vRes.status === 'fulfilled' ? (vRes.value.data?.length ?? 0) : 0
