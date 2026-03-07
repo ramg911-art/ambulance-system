@@ -62,8 +62,9 @@ export function generateInvoicePdf(data) {
   const boxW = w - 40
   const lineH = 7
 
+  const driverDisplay = [data.driver_name, data.driver_mobile].filter(Boolean).join(' • ') || '—'
   const rows = [
-    ['Driver', data.driver_name || '—'],
+    ['Driver', driverDisplay],
     ['Vehicle', data.vehicle_registration || '—'],
     ['Trip Start', data.start_time ? new Date(data.start_time).toLocaleString('en-IN') : '—'],
     ['Pickup', data.pickup_location || '—'],

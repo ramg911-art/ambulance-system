@@ -93,7 +93,12 @@ function openCreate() {
 
 function openEdit(d) {
   editingId.value = d.id
-  form.value = { ...d, password: '' }
+  form.value = {
+    ...d,
+    user_id: d.user_id ?? d.phone ?? '',
+    mobile: d.mobile ?? '',
+    password: '',
+  }
   showModal.value = true
 }
 
