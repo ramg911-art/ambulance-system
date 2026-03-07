@@ -132,15 +132,17 @@ function syncCurrentPosition() {
         })
       }
     }
+    centerMap(mapRef.value, pos, 15)
   } else if (props.showCurrentLocation && navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (geo) => {
         const lat = geo.coords.latitude
         const lng = geo.coords.longitude
+        const pos = { lat, lng }
         if (currentLocationMarker.value) {
-          updateMarker(currentLocationMarker.value, { lat, lng })
+          updateMarker(currentLocationMarker.value, pos)
         } else if (mapRef.value) {
-          currentLocationMarker.value = createMarker(mapRef.value, { lat, lng }, {
+          currentLocationMarker.value = createMarker(mapRef.value, pos, {
             title: 'Current location',
             draggable: false,
           })
@@ -155,6 +157,7 @@ function syncCurrentPosition() {
             })
           }
         }
+        centerMap(mapRef.value, pos, 15)
       },
       () => {}
     )
